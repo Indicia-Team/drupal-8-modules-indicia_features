@@ -50,4 +50,5 @@ content:
       preview_image_style: thumbnail
     third_party_settings: {  }
     weight: 3
-hidden: {  }
+hidden:
+  field_indicia_user_id: true
