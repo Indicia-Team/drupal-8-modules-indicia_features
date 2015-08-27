@@ -15,11 +15,80 @@ function easy_login_user_login($account) {
     // we last logged in. So there might be existing records to move into our user account.
     $needToProcessExistingRecords = ($account->access->value!==0) && empty($account->field_indicia_user_id->value);
     easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords);
+    $response = easy_login_call_get_user_id($account);
+    easy_login_handle_get_user_id_response($account, $response);
   }
 }
 
 function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
   // @todo hook this to the resolve Indicia user ID code.
+}
+
+/**
+ * Function to call the get_user_id service on the warehouse.
+ * @param object $account User account object
+ * @param string $force Set to merge (to force a merge operation) or split (to force no merge).
+ * @param array $users_to_merge If force is set to merge, but only some users must be merged,
+ * pass an array of the user IDs.
+ * @return string Response from call to get_user_id
+ */
+function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array(), $needToProcessExistingRecords=false) {
+  iform_load_helpers(array('data_entry_helper'));
+  $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
+  $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
+  $identifiers = urlencode(json_encode($identifiers));
+  $config = \Drupal::config('indicia.settings');
+  $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+  $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
+  if ($needToProcessExistingRecords)
+    $url .= '&cms_user_id='.$account->uid;
+  $postargs = 'surname='.urlencode($account->field_last_name->value).'&identifiers='.$identifiers;
+  if (!empty($account->field_indicia_user_id->value))
+    $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
+  if (count($fieldsToSyncByCaption))
+    $postargs .= '&attribute_values='.urlencode(json_encode($fieldsToSyncByCaption));
+  if (!empty($account->field_first_name->value))
+    $postargs .= '&first_name='.urlencode($account->field_first_name->value);
+  if ($force && ($force==='merge' || $force==='split')) {
+    $postargs .= '&force='.$force;
+    // We are definitely doing something on the server, so can inform the user
+    drupal_set_message(t('Your user information has been updated.'));
+  }
+  $postargs .= '&shares_to_prevent=';
+  if (isset($account->field_record_privacy) && $account->field_record_privacy)
+    $postargs .= 'reporting,peer_review,verification,data_flow,moderation';
+  if ($users_to_merge)
+    $postargs .= '&user_to_merge='.urlencode(json_encode($users_to_merge));
+  $response = data_entry_helper::http_post($url, $postargs);
+  return $response['output'];
+}
+
+
+/**
+ * Handle the response from a call to get_user_id on the warehouse services.
+ * @param object $account User object to save to
+ * @param string $response Response from call to get_user_id (should be a json string).
+ */
+function easy_login_handle_get_user_id_response($account, $response) {
+  drupal_set_message($response);
+  $response = json_decode($response);
+  if (isset($response->userId)) {
+    $isEmpty = empty($account->field_indicia_user_id->value);
+    if ($isEmpty || $account->field_indicia_user_id->value != $response->userId) {
+      // @todo: no need for these messages during registration
+      if ($isEmpty)
+        drupal_set_message(t('Your user account is now linked to the central records database.'));
+      else
+        drupal_set_message(t('Your user account link to the central records database has been updated.'));
+      $account->field_indicia_user_id->setValue($response->userId);
+      $account->save();
+    }
+  } elseif (isset($response->possibleMatches)) {
+    $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
+    $_SESSION['uid_to_resolve'] = $account->id();
+    hostsite_goto_page('easy_login/resolve_multiple_users');
+  } elseif (isset($response->error))
+    drupal_set_message($response->error, 'warning');
 }
 
 function easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords) {
