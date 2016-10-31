@@ -1,0 +1,138 @@
+<?php
+
+function easy_login_user_login($account) {
+  if (empty($account->field_last_name->value)) {
+    drupal_set_message(t('Please set at least your last name on your !account. ' .
+       'This will allow your user registration to be linked properly to the central database of records.',
+        array('!account' => \Drupal::l('user account', $account->urlInfo('edit-form')))));
+    return;
+  }
+  elseif ($account->access->value!==0 && !empty($account->field_indicia_user_id->value))
+    // if not first login and we know our indicia user ID, then there is nothing more to do
+    return;
+  else {
+    // if we've logged in before but don't have a warehouse user ID, then it means Easy Login was installed since
+    // we last logged in. So there might be existing records to move into our user account.
+    $needToProcessExistingRecords = ($account->access->value!==0) && empty($account->field_indicia_user_id->value);
+    easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords);
+    $response = easy_login_call_get_user_id($account);
+    easy_login_handle_get_user_id_response($account, $response);
+  }
+}
+
+function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
+  // @todo hook this to the resolve Indicia user ID code.
+}
+
+/**
+ * Function to call the get_user_id service on the warehouse.
+ * @param object $account User account object
+ * @param string $force Set to merge (to force a merge operation) or split (to force no merge).
+ * @param array $users_to_merge If force is set to merge, but only some users must be merged,
+ * pass an array of the user IDs.
+ * @return string Response from call to get_user_id
+ */
+function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array(), $needToProcessExistingRecords=false) {
+  iform_load_helpers(array('data_entry_helper'));
+  $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
+  $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
+  $identifiers = urlencode(json_encode($identifiers));
+  $config = \Drupal::config('indicia.settings');
+  $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+  $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
+  if ($needToProcessExistingRecords)
+    $url .= '&cms_user_id='.$account->uid;
+  $postargs = 'surname='.urlencode($account->field_last_name->value).'&identifiers='.$identifiers;
+  if (!empty($account->field_indicia_user_id->value))
+    $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
+  if (count($fieldsToSyncByCaption))
+    $postargs .= '&attribute_values='.urlencode(json_encode($fieldsToSyncByCaption));
+  if (!empty($account->field_first_name->value))
+    $postargs .= '&first_name='.urlencode($account->field_first_name->value);
+  if ($force && ($force==='merge' || $force==='split')) {
+    $postargs .= '&force='.$force;
+    // We are definitely doing something on the server, so can inform the user
+    drupal_set_message(t('Your user information has been updated.'));
+  }
+  $postargs .= '&shares_to_prevent=';
+  if (isset($account->field_record_privacy) && $account->field_record_privacy)
+    $postargs .= 'reporting,peer_review,verification,data_flow,moderation';
+  if ($users_to_merge)
+    $postargs .= '&user_to_merge='.urlencode(json_encode($users_to_merge));
+  $response = data_entry_helper::http_post($url, $postargs);
+  return $response['output'];
+}
+
+
+/**
+ * Handle the response from a call to get_user_id on the warehouse services.
+ * @param object $account User object to save to
+ * @param string $response Response from call to get_user_id (should be a json string).
+ */
+function easy_login_handle_get_user_id_response($account, $response) {
+  drupal_set_message($response);
+  $response = json_decode($response);
+  if (isset($response->userId)) {
+    $isEmpty = empty($account->field_indicia_user_id->value);
+    if ($isEmpty || $account->field_indicia_user_id->value != $response->userId) {
+      // @todo: no need for these messages during registration
+      if ($isEmpty)
+        drupal_set_message(t('Your user account is now linked to the central records database.'));
+      else
+        drupal_set_message(t('Your user account link to the central records database has been updated.'));
+      $account->field_indicia_user_id->setValue($response->userId);
+      $account->save();
+    }
+  } elseif (isset($response->possibleMatches)) {
+    $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
+    $_SESSION['uid_to_resolve'] = $account->id();
+    hostsite_goto_page('easy_login/resolve_multiple_users');
+  } elseif (isset($response->error))
+    drupal_set_message($response->error, 'warning');
+}
+
+function easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords) {
+  $fieldsToSyncByCaption = array();
+  $account = \Drupal\user\Entity\User::load($account->uid->value);
+  foreach ($account as $field => $def) {
+    // @todo The following should only pick up field values that have actually changed.
+    if (preg_match('/^field_indicia_/', $field) && $field!=='field_indicia_user_id') {
+      $value = empty($def->value) ? $def->value : $def;
+      $fieldsToSyncByCaption[$def->label] = $value;
+    }
+    /*
+      // fields that are available for synchronisation must be called field_indicia_*. We
+      // also don't want to handle anything that has not actually changed.
+      $userField = $existingUser->$field;
+      //Check for empty as fields that have not been synced before will have empty $userField
+      if (empty($userField[LANGUAGE_NONE][0]['value']) || ($value !== $userField[LANGUAGE_NONE][0]['value'])) {
+        $fieldsToSync[$field] = $value;
+      }
+    }*/
+  }
+/*
+
+    if ($account->uid===$user->uid) {
+      // If the user has not filled in preferences then prompt them. Allow for the fact that the site administrator might have
+      // hidden these fields if they feel they are not relevant to the site.
+      $requests = array();
+      // $account->field_taxon_groups etc contains something if the field exist
+      if (isset($account->field_location) && empty($edit['field_location'][LANGUAGE_NONE]))
+        $requests[] = t('the area you would most often like to record in');
+      if (isset($account->field_taxon_groups) && empty($edit['field_taxon_groups'][LANGUAGE_NONE]))
+        $requests[] = t('the list of species groups you are particularly interested in');
+      if (!empty($requests))
+        drupal_set_message(t('Why not tell us !requests to help us tailor the system to your needs? '.
+          'You can fill this information in on your !link.',
+          array(
+            '!requests'=>implode(' '.t('and').' ', $requests),
+            '!link'=>l('user preferences', 'user/'.$account->uid.'/edit')
+          )
+        ));
+    }
+  }
+  easy_login_move_form_data_into_account($edit, $account);
+  $response=easy_login_call_get_user_id($account, null, null, $fieldsToSyncByCaption, $needToProcessExistingRecords);
+  easy_login_handle_get_user_id_response($account, $response);
+*/
+}
