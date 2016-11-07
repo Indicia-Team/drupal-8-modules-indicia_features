@@ -16,12 +16,15 @@ function easy_login_user_login($account) {
     $needToProcessExistingRecords = ($account->access->value!==0) && empty($account->field_indicia_user_id->value);
     easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords);
     $response = easy_login_call_get_user_id($account);
-    easy_login_handle_get_user_id_response($account, $response);
+    easy_login_handle_get_user_id_response($account, $response, true);
   }
 }
 
-function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
-  // @todo hook this to the resolve Indicia user ID code.
+function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $account) {
+  if (empty($account->field_indicia_user_id->value)) {
+    $response = easy_login_call_get_user_id($account);
+    easy_login_handle_get_user_id_response($account, $response, false);
+  }
 }
 
 /**
@@ -32,12 +35,13 @@ function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $entity) {
  * pass an array of the user IDs.
  * @return string Response from call to get_user_id
  */
-function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array(), $needToProcessExistingRecords=false) {
+function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array(),
+                                     $needToProcessExistingRecords=false) {
   iform_load_helpers(array('data_entry_helper'));
   $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
   $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
   $identifiers = urlencode(json_encode($identifiers));
-  $config = \Drupal::config('indicia.settings');
+  $config = \Drupal::config('iform.settings');
   $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
   $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
   if ($needToProcessExistingRecords)
@@ -68,9 +72,9 @@ function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null
  * Handle the response from a call to get_user_id on the warehouse services.
  * @param object $account User object to save to
  * @param string $response Response from call to get_user_id (should be a json string).
+ * @param boolean $save Should the updated account be saved?
  */
-function easy_login_handle_get_user_id_response($account, $response) {
-  drupal_set_message($response);
+function easy_login_handle_get_user_id_response($account, $response, $save) {
   $response = json_decode($response);
   if (isset($response->userId)) {
     $isEmpty = empty($account->field_indicia_user_id->value);
@@ -81,7 +85,8 @@ function easy_login_handle_get_user_id_response($account, $response) {
       else
         drupal_set_message(t('Your user account link to the central records database has been updated.'));
       $account->field_indicia_user_id->setValue($response->userId);
-      $account->save();
+      if ($save)
+        $account->save();
     }
   } elseif (isset($response->possibleMatches)) {
     $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
