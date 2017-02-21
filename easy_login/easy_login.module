@@ -2,9 +2,9 @@
 
 function easy_login_user_login($account) {
   if (empty($account->field_last_name->value)) {
-    drupal_set_message(t('Please set at least your last name on your !account. ' .
+    drupal_set_message(t('Please set at least your last name on your @account. ' .
        'This will allow your user registration to be linked properly to the central database of records.',
-        array('!account' => \Drupal::l('user account', $account->urlInfo('edit-form')))));
+        array('@account' => \Drupal::l('user account', $account->urlInfo('edit-form')))));
     return;
   }
   elseif ($account->access->value!==0 && !empty($account->field_indicia_user_id->value))
@@ -122,11 +122,11 @@ function easy_login_synchronise_account_to_warehouse($account, $needToProcessExi
       if (isset($account->field_taxon_groups) && empty($edit['field_taxon_groups'][LANGUAGE_NONE]))
         $requests[] = t('the list of species groups you are particularly interested in');
       if (!empty($requests))
-        drupal_set_message(t('Why not tell us !requests to help us tailor the system to your needs? '.
-          'You can fill this information in on your !link.',
+        drupal_set_message(t('Why not tell us @requests to help us tailor the system to your needs? '.
+          'You can fill this information in on your @link.',
           array(
-            '!requests'=>implode(' '.t('and').' ', $requests),
-            '!link'=>l('user preferences', 'user/'.$account->uid.'/edit')
+            '@requests'=>implode(' '.t('and').' ', $requests),
+            '@link'=>l('user preferences', 'user/'.$account->uid.'/edit')
           )
         ));
     }
