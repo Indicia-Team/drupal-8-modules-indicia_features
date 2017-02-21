@@ -37,7 +37,7 @@ function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null
   $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
   $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
   $identifiers = urlencode(json_encode($identifiers));
-  $config = \Drupal::config('indicia.settings');
+  $config = \Drupal::config('iform.settings');
   $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
   $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
   if ($needToProcessExistingRecords)
@@ -70,7 +70,6 @@ function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null
  * @param string $response Response from call to get_user_id (should be a json string).
  */
 function easy_login_handle_get_user_id_response($account, $response) {
-  drupal_set_message($response);
   $response = json_decode($response);
   if (isset($response->userId)) {
     $isEmpty = empty($account->field_indicia_user_id->value);
