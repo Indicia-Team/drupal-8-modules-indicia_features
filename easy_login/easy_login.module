@@ -7,23 +7,23 @@ function easy_login_user_login($account) {
         array('!account' => \Drupal::l('user account', $account->urlInfo('edit-form')))));
     return;
   }
-  elseif ($account->access->value!==0 && !empty($account->field_indicia_user_id->value))
+  elseif ($account->access->value !== 0 && !empty($account->field_indicia_user_id->value))
     // if not first login and we know our indicia user ID, then there is nothing more to do
     return;
   else {
     // if we've logged in before but don't have a warehouse user ID, then it means Easy Login was installed since
     // we last logged in. So there might be existing records to move into our user account.
-    $needToProcessExistingRecords = ($account->access->value!==0) && empty($account->field_indicia_user_id->value);
+    $needToProcessExistingRecords = ($account->access->value !== 0) && empty($account->field_indicia_user_id->value);
     easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords);
     $response = easy_login_call_get_user_id($account);
-    easy_login_handle_get_user_id_response($account, $response, true);
+    easy_login_handle_get_user_id_response($account, $response, TRUE);
   }
 }
 
 function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $account) {
-  if (empty($account->field_indicia_user_id->value)) {
+  if ($account->isActive() && empty($account->field_indicia_user_id->value)) {
     $response = easy_login_call_get_user_id($account);
-    easy_login_handle_get_user_id_response($account, $response, false);
+    easy_login_handle_get_user_id_response($account, $response, FALSE);
   }
 }
 
