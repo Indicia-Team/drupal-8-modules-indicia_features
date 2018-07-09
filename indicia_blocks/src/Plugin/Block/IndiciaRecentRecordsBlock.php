@@ -76,7 +76,12 @@ HTML;
         }
         $classtext = implode(' ', $classes);
         foreach ($images as $image) {
-          $r .= "<img src=\"http://warehouse1.indicia.org.uk/upload/thumb-$image\" class=\"$classtext\">";
+          $r .= <<<HTML
+<a href="http://warehouse1.indicia.org.uk/upload/$image" class="fancybox">
+  <img src="http://warehouse1.indicia.org.uk/upload/thumb-$image" class="$classtext">
+</a>
+
+HTML;
         }
         $r .= '</div>';
       }
@@ -112,6 +117,7 @@ JS;
       '#attached' => [
         'library' => [
           'indicia_blocks/recent-records-block',
+          'iform/fancybox',
         ],
       ],
       '#cache' => [
