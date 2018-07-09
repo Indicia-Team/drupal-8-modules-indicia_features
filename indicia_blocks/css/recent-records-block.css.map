@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAAA,yBAA0B;EACxB,UAAU,EAAE,KAAK;EACjB,UAAU,EAAE,MAAM;EAEhB,oEAAoB;IAClB,OAAO,EAAE,YAAY;IACrB,SAAS,EAAE,IAAI",
+"sources": ["../scss/recent-records-block.scss"],
+"names": [],
+"file": "recent-records-block.css"
+}

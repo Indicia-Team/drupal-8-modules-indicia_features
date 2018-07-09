@@ -1,0 +1,8 @@
+#recent-records-container {
+  max-height: 600px;
+  overflow-y: scroll; }
+  #recent-records-container .recent-records-images .thumbnail.multiple {
+    display: inline-block;
+    max-width: 90px; }
+
+/*# sourceMappingURL=recent-records-block.css.map */

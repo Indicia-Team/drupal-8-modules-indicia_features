@@ -1,0 +1,5 @@
+recent-records-block:
+  version: VERSION
+  css:
+    component:
+      css/recent-records-block.css: {}

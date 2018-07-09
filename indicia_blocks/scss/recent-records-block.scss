@@ -1,0 +1,10 @@
+#recent-records-container {
+  max-height: 600px;
+  overflow-y: scroll;
+  .recent-records-images {
+    .thumbnail.multiple {
+      display: inline-block;
+      max-width: 90px;
+    }
+  }
+}
