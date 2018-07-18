@@ -1,7 +1,7 @@
 {
 "version": 3,
-"mappings": "AAAA,yBAA0B;EACxB,UAAU,EAAE,KAAK;EACjB,UAAU,EAAE,MAAM;EAEhB,oEAAoB;IAClB,OAAO,EAAE,YAAY;IACrB,SAAS,EAAE,IAAI",
-"sources": ["../scss/recent-records-block.scss"],
+"mappings": "AAAA,yBAA0B;EACxB,UAAU,EAAE,KAAK;EACjB,UAAU,EAAE,MAAM;EAClB,0CAAiB;IACf,OAAO,EAAE,UAAU;IACnB,kEAAwB;MACtB,MAAM,EAAE,gBAAgB;EAG5B,uCAAc;IACZ,WAAW,EAAE,IAAI;EAEnB,gCAAO;IACL,UAAU,EAAE,MAAM;EAGlB,2DAAW;IACT,aAAa,EAAE,GAAG;IAClB,MAAM,EAAE,IAAI;IACZ,OAAO,EAAE,GAAG;IACZ,SAAS,EAAE,IAAI;IACf,oEAAW;MACT,OAAO,EAAE,YAAY;MACrB,SAAS,EAAE,IAAI",
+"sources": ["../scss/recent_records_block.scss"],
 "names": [],
-"file": "recent-records-block.css"
+"file": "recent_records_block.css"
 }

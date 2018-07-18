@@ -4,7 +4,6 @@ namespace Drupal\indicia_blocks\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
-use Masterminds\HTML5;
 
 /**
  * Provides a 'Recent Records' block.
@@ -60,13 +59,13 @@ HTML;
       if ($row['common']) {
         $common = "<span class=\"common\">$row[common]</span>";
         $species = $row['common'] !== $row['taxon'] ?
-          "<div class=\"record-title\">$common</div>($latin)" : "<div class=\"record-title\">$latin</div>";
+          "<div class=\"record-title\">$common</div>($latin)<br/>" : "<div class=\"record-title\">$latin</div>";
       }
       else {
         $species = "<div class=\"record-title\">$latin</div>";
       }
       $r .= '<li class="recent-records-row clearfix list-group-item">';
-      $r .= "<div class=\"recent-records-details pull-left\">$species<br/><span class=\"extra\">$row[output_sref] on $row[date] by $row[recorder]</span></div>";
+      $r .= "<div class=\"recent-records-details pull-left\">$species<span class=\"extra\">$row[output_sref] on $row[date] by $row[recorder]</span></div>";
       if (!empty($row['images'])) {
         $r .= '<div class="recent-records-images pull-right">';
         $images = explode(',', $row['images']);
