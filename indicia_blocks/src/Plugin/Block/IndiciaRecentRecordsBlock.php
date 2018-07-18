@@ -34,6 +34,8 @@ class IndiciaRecentRecordsBlock extends BlockBase {
         '#markup' => '',
       ];
     }
+    $protocol = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS']==='off' ? 'http' : 'https';
+    $uploadPath = preg_replace('/^http(s?)\:/', "$protocol:", $connection['base_url'] . 'upload');
     $readAuth = \report_helper::get_read_auth($connection['website_id'], $connection['password']);
     $configuredParams = \helper_base::explode_lines_key_value_pairs($this->configuration['report_parameters']);
     $rows = \report_helper::get_report_data([
@@ -76,8 +78,8 @@ HTML;
         $classtext = implode(' ', $classes);
         foreach ($images as $image) {
           $r .= <<<HTML
-<a href="http://warehouse1.indicia.org.uk/upload/$image" class="fancybox">
-  <img src="http://warehouse1.indicia.org.uk/upload/thumb-$image" class="$classtext">
+<a href="$uploadPath/$image" class="fancybox">
+  <img src="$uploadPath/thumb-$image" class="$classtext">
 </a>
 
 HTML;
