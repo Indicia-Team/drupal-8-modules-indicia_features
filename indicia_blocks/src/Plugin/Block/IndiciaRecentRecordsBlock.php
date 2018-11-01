@@ -40,7 +40,7 @@ class IndiciaRecentRecordsBlock extends BlockBase {
     $configuredParams = \helper_base::explode_lines_key_value_pairs($this->configuration['report_parameters']);
     $rows = \report_helper::get_report_data([
       'readAuth' => $readAuth,
-      'dataSource' => 'specific_surveys/d8_blocks/filterable_explore_list_with_geom',
+      'dataSource' => 'library/occurrences/filterable_explore_list_with_geom',
       'extraParams' => [
         'smpattrs' => '',
         'occattrs' => '',
