@@ -21,7 +21,7 @@ function easy_login_user_login($account) {
 }
 
 function easy_login_user_presave(Drupal\Core\Entity\EntityInterface $account) {
-  if ($account->isActive() && empty($account->field_indicia_user_id->value)) {
+  if ($account->isActive() && $account->id() && empty($account->field_indicia_user_id->value)) {
     $response = easy_login_call_get_user_id($account);
     easy_login_handle_get_user_id_response($account, $response, FALSE);
   }

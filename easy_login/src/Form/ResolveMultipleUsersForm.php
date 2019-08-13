@@ -68,7 +68,7 @@ class ResolveMultipleUsersForm extends FormBase {
     }
     $account = \Drupal\user\Entity\User::load($_SESSION['uid_to_resolve']);
     $response = easy_login_call_get_user_id($account, 'merge', $listToMerge);
-    easy_login_handle_get_user_id_response($account, $response);
+    easy_login_handle_get_user_id_response($account, $response, TRUE);
     hostsite_goto_page('user/'.$account->id().'/edit');
   }
 
