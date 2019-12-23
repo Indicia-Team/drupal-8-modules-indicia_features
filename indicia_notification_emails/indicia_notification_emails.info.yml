@@ -1,0 +1,9 @@
+name: 'Indicia notification emails'
+description: 'Allows a user to managed their email notification settings on the Indicia warehouse.'
+core: 8.x
+version: "8.x-1.0"
+package: "Indicia"
+type: module
+dependencies:
+  - iform
+  - easy_login

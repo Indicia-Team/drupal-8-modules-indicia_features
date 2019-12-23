@@ -1,0 +1,28 @@
+#recent-records-container {
+  max-height: 500px;
+  overflow-y: scroll;
+  .list-group-item {
+    padding: 0 0 0 10px;
+    .recent-records-details {
+      margin: 10px 10px 10px 0;
+    }
+  }
+  .record-title {
+    font-weight: bold;
+  }
+  .latin {
+    font-style: italic;
+  }
+  .recent-records-images {
+    .thumbnail {
+      margin-bottom: 0px;
+      border: none;
+      padding: 2px;
+      max-width: 95px;
+      &.multiple {
+        display: inline-block;
+        max-width: 85px;
+      }
+    }
+  }
+}
