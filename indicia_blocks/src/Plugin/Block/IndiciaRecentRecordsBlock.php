@@ -29,7 +29,7 @@ class IndiciaRecentRecordsBlock extends BlockBase {
     iform_load_helpers(['report_helper']);
     $connection = iform_get_connection_details();
     if (empty($connection['website_id']) || empty($connection['password'])) {
-      drupal_set_message('Indicia configuration incomplete.', 'warning');
+      $this->messenger->addWarning('Indicia configuration incomplete.');
       return [
         '#markup' => '',
       ];
