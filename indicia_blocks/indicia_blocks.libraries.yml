@@ -3,5 +3,3 @@ recent-records-block:
   css:
     component:
       css/recent_records_block.css: {}
-  js:
-    js/recent_records_block.js: {}
