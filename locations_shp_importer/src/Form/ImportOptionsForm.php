@@ -16,7 +16,6 @@ require __DIR__ . '/../../lib/php-xbase/src/XBase/Record.php';
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use submission_builder;
 use XBase\Table;
 use XBase\Record;
 
@@ -160,9 +159,7 @@ class ImportOptionsForm extends FormBase {
       return;
     }
     $this->getNameCodeCombinationsFromImport($options);
-    if ($options['existing'] !== 'always_new') {
-      $this->getExistingMatchingLocations($options, $auth['read']);
-    }
+    $this->getExistingMatchingLocations($options, $auth['read']);
     foreach ($this->nameCodeCombinations as $key => $info) {
       $tokens = explode('||', $key);
       $locationName = $tokens[0];
@@ -176,6 +173,10 @@ class ImportOptionsForm extends FormBase {
         $this->messenger()->addWarning($this->t('Location @name found on the warehouse so the matching location in the import file was ignored.',
           ['@name' => $locationName]));
         continue;
+      }
+      if (count($info['existing']) > 0 && $options['existing'] === 'always_new') {
+        // Make name unique to avoid clash.
+        $locationName .= ' ' . uniqid();
       }
       $firstIdInsertedForSet = NULL;
       foreach ($info['wkt'] as $idx => $wkt) {
@@ -281,6 +282,7 @@ class ImportOptionsForm extends FormBase {
    *   Read authorisation tokens.
    */
   private function getExistingMatchingLocations(array $options, array $readAuth) {
+    $conn = iform_get_connection_details();
     foreach ($this->nameCodeCombinations as $key => &$info) {
       $tokens = explode('||', $key);
       $checkParams = [
