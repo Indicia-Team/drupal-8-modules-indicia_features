@@ -1,0 +1,20 @@
+locations_shp_importer.import:
+  path: '/locations_shp_importer/import'
+  defaults:
+    _form: '\Drupal\locations_shp_importer\Form\ImportForm'
+    _title: 'Import SHP file'
+  requirements:
+    _permission: 'import locations'
+locations_shp_importer.import_options:
+  path: '/locations_shp_importer/import_options/{path}/{file}'
+  defaults:
+    _form: '\Drupal\locations_shp_importer\Form\ImportOptionsForm'
+    _title: 'Import SHP file options'
+  options:
+    parameters:
+      path:
+        type: string
+      file:
+        type: string
+  requirements:
+    _permission: 'import locations'

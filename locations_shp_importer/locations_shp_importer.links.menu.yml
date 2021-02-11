@@ -1,0 +1,6 @@
+locations_shp_importer.admin_import_locations:
+  title: 'Import locations from SHP files'
+  route_name: locations_shp_importer.import
+  parent: iform.admin_config_iform
+  description: 'Import locations from SHP file.'
+  weight: 50

@@ -1,0 +1,3 @@
+import locations:
+  title: 'Import Indicia locations'
+  description: 'Import locations into the Indicia warehouse from a SHP file.'
