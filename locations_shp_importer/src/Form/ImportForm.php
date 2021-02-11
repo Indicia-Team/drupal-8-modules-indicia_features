@@ -30,7 +30,7 @@ class ImportForm extends FormBase {
     global $indicia_templates;
     $msg = $this->t('To use this tool, you need a set of files in SHP format, including at least a file called *.shp and a file called *.dbf.');
     $msg .= ' ' . $this->t('The SHP file attributes in the *.dbf file must include an attribute which provides a name and an optional code for each location.');
-    $msg .= ' ' . $this->t('Zip your files together into a single file to upload below.');
+    $msg .= ' ' . $this->t('Select your files and add them to a zip file, not in a sub-folder then upload the zip file below.');
     $instruct = str_replace(
       '{message}',
       $msg,
@@ -69,6 +69,10 @@ class ImportForm extends FormBase {
     $firstFilename = '';
     $exts = [];
     foreach ($files as $file) {
+      if (!preg_match('#^[^/]++$#', $file)) {
+        $this->messenger()->addError($this->t('The files must be in the root of the zip file, not in a sub-folder.'));
+        return;
+      }
       $tokens = explode('.', $file);
       $ext = array_pop($tokens);
       $filename = implode('.', $tokens);
