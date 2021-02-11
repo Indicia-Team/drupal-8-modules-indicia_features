@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Contains \Drupal\locations_shp_importer\Form\ImportForm.
@@ -61,9 +60,9 @@ class ImportForm extends FormBase {
     if (!$file) {
       return;
     }
-    $archiver = archiver_get_archiver($file->getFileUri());
+    $archiver = \Drupal::service('plugin.manager.archiver')->getInstance(['filepath' => $file->getFileUri()]);
     if (!$archiver) {
-      $this->messenger()->addError(t('Cannot extract %file, not a valid archive.', array ('%file' => $file->getFilename())));
+      $this->messenger()->addError($this->t('Cannot extract %file, not a valid archive.', ['%file' => $file->getFilename()]));
       return;
     }
     $files = $archiver->listContents();
