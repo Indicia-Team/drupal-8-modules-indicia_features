@@ -51,11 +51,24 @@ class ImportOptionsForm extends FormBase {
     }
     $columns = array_combine(array_keys($dBaseTable->getColumns()), array_keys($dBaseTable->getColumns()));
     $locationTypes = $this->getLocationTypes();
+
+    global $indicia_templates;
+    $existingInstruct = str_replace(
+      '{message}',
+      $this->t('If you are uploading a shp file with a replacement or duplicate of an existing site, selected from one of the folowing options.'),
+      $indicia_templates['messageBox']
+    );
+    $multipleInstruct = str_replace(
+      '{message}',
+      $this->t('Is the shp file you are uploading for a site with multiple polygons i.e is not one contiguous area? If so select from one of the following options.'),
+      $indicia_templates['messageBox']
+    );
+
     $form['basefile'] = [
       '#type' => 'hidden',
       '#value' => $basefile,
     ];
-    // @todo - list of options more comprehensive, or use Indicia settings.
+    // @todo List of options more comprehensive, or use Indicia settings.
     $form['srid'] = [
       '#title' => $this->t('Projection'),
       '#description' => $this->t('Projection used in the SHP file polygons.'),
@@ -82,20 +95,32 @@ class ImportOptionsForm extends FormBase {
       '#options' => $columns,
       '#empty_option' => $this->t('- Please select -'),
     ];
-    $form['existing'] = [
+    $form['existing_fieldset'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Existing sites'),
+    ];
+    $form['existing_fieldset']['existing_instruct'] = [
+      '#markup' => $existingInstruct,
+    ];
+    $form['existing_fieldset']['existing'] = [
       '#title' => $this->t('Behaviour for existing locations with same name and code'),
-      '#description' => $this->t('How should existing locations with the same name and code be handled?'),
       '#type' => 'radios',
       '#options' => [
-        'ignore_new' => $this->t('Ignore the new location.'),
-        'update_boundary' => $this->t('Update the existing location with the imported location boundary.'),
-        'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.'),
+        'ignore_new' => $this->t('Ignore the new location.<p>Select this if your shp file upload has multiple site boundaries, and the duplicate site is not a replacement.</p>'),
+        'update_boundary' => $this->t('Update the existing location with the imported location boundary.<p>Select this if the duplicate site boundary is an update to an existing site.</p>'),
+        'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.<p>Select this if the site boundary is a duplicate, but you wish to keep it as separate/unique to the original - not recommended.</p>'),
       ],
       '#required' => TRUE,
     ];
-    $form['multiple'] = [
+    $form['multiple_fieldset'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Multiple polygons'),
+    ];
+    $form['multiple_fieldset']['multiple_instruct'] = [
+      '#markup' => $multipleInstruct,
+    ];
+    $form['multiple_fieldset']['multiple'] = [
       '#title' => $this->t('Behaviour for multiple polygons with same name and code in imported data'),
-      '#description' => $this->t('How should multiple polygons in the imported data be handled?'),
       '#type' => 'radios',
       '#options' => [
         'combine' => $this->t('Combine to make a single location.'),
