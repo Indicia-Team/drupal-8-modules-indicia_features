@@ -156,13 +156,18 @@ class ImportOptionsForm extends FormBase {
     $conn = iform_get_connection_details();
     iform_load_helpers([]);
     $readAuth = \helper_base::get_read_auth($conn['website_id'], $conn['password']);
+    $config = $this->config('locations_shp_importer.settings');
+    $params = [
+      'view' => 'cache',
+      'termlist_title' => 'Location types',
+      'orderby' => 'sort_order,term',
+    ];
+    if (!empty(trim($config->get('location_type_terms')))) {
+      $params['query'] = json_encode(['in' => ['term' => \helper_base::explode_lines($config->get('location_type_terms'))]]);
+    }
     $typeData = \helper_base::get_population_data([
       'table' => 'termlists_term',
-      'extraParams' => $readAuth + [
-        'view' => 'cache',
-        'termlist_title' => 'Location types',
-        'orderby' => 'sort_order,term',
-      ],
+      'extraParams' => $readAuth + $params,
     ]);
     foreach ($typeData as $type) {
       $locationTypes[$type['id']] = $type['term'];

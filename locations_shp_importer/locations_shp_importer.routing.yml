@@ -1,3 +1,10 @@
+locations_shp_importer.settings:
+  path: '/locations_shp_importer/settings'
+  defaults:
+    _form: '\Drupal\locations_shp_importer\Form\SettingsForm'
+    _title: 'Locations SHP importer settings'
+  requirements:
+    _permission: administer import locations'
 locations_shp_importer.import:
   path: '/locations_shp_importer/import'
   defaults:
