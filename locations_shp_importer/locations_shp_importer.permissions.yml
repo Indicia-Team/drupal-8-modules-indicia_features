@@ -1,5 +1,5 @@
 administer import locations:
-  title: 'Administrate Import Indicia locations tool'
+  title: 'Administer Import Indicia locations tool'
   description: 'Enables access to settings for the Locations SHP Importer'
 import locations:
   title: 'Import Indicia locations'
