@@ -56,6 +56,11 @@ class IndiciaRecentRecordsMapBlock extends BlockBase {
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
   public function getCacheMaxAge() {
     return 0;
   }

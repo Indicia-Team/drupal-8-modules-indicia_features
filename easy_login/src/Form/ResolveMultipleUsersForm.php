@@ -22,29 +22,29 @@ class ResolveMultipleUsersForm extends FormBase {
    * {@inheritdoc}.
    */
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
-    $form = array();
+    $form = [];
     $userList = $_SESSION['multiple_users_to_resolve'];
-    drupal_set_message(t('There appear to be several existing users on the central records database which may or may not be yours. They are users of the '.
+    \Drupal::messenger()->addMessage(t('There appear to be several existing users on the central records database which may or may not be yours. They are users of the ' .
       'following websites. Please tick the ones which you agree you have been a user of then press Save.'));
-    $websites = array();
+    $websites = [];
     $config = \Drupal::config('indicia.settings');
     foreach ($userList as $user) {
-      if ($user->website_id!==$config->get('website_id'))
+      if ($user->website_id !== $config->get('website_id'))
         $websites[$user->website_id] = $user->title;
     }
-    $form['website_list'] = array(
-      '#type'=>'fieldset',
-      '#title'=>t('List of websites you might be a user of:')
-    );
-    $form['website_list']['websites'] = array(
+    $form['website_list'] = [
+      '#type' => 'fieldset',
+      '#title' => t('List of websites you might be a user of:'),
+    ];
+    $form['website_list']['websites'] = [
       '#type' => 'checkboxes',
-      '#options' => $websites
-    );
+      '#options' => $websites,
+    ];
 
-    $form['submit'] = array(
+    $form['submit'] = [
       '#type' => 'submit',
       '#value' => t('Save'),
-    );
+    ];
     return $form;
   }
 

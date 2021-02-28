@@ -124,7 +124,7 @@ function indicia_notification_emails_user_form_submit($form, FormStateInterface 
   if (count($submission['submission_list']['entries'])) {
     $response = data_entry_helper::forward_post_to('save', $submission, $auth['write_tokens']);
     if (!(is_array($response) && array_key_exists('success', $response))) {
-      drupal_set_message(check_plain(print_r($response, TRUE)));
+      \Drupal::messenger()->addWarning(print_r($response, TRUE));
     }
   }
 }
