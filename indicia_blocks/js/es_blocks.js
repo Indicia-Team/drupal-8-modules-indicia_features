@@ -3,6 +3,10 @@ jQuery(document).ready(function($) {
     var ul = $('<ul>')
       .attr('id', 'recent-records-container')
       .addClass('list-group');
+    if (!response.hits) {
+      $(div).append('<div class="alert alert-info">No records found</div>');
+      return;
+    }
     $(div).append(ul);
     $.each(response.hits.hits, function() {
       var li = $('<li>').appendTo(ul)

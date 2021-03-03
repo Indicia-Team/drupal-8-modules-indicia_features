@@ -42,7 +42,7 @@ class IndiciaEsTotalsBlock extends BlockBase {
           ],
         ],
         'photo_count' => [
-          'nested' => [ 'path' => 'occurrence.media' ],
+          'nested' => ['path' => 'occurrence.media'],
         ],
         'recorder_count' => [
           'cardinality' => [
