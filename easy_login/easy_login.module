@@ -137,11 +137,11 @@ function easy_login_synchronise_account_to_warehouse($account, $needToProcessExi
       if (isset($account->field_taxon_groups) && empty($edit['field_taxon_groups'][LANGUAGE_NONE]))
         $requests[] = t('the list of species groups you are particularly interested in');
       if (!empty($requests))
-        drupal_set_message(t('Why not tell us !requests to help us tailor the system to your needs? '.
-          'You can fill this information in on your !link.',
+        drupal_set_message(t('Why not tell us @requests to help us tailor the system to your needs? '.
+          'You can fill this information in on your @link.',
           array(
-            '!requests'=>implode(' '.t('and').' ', $requests),
-            '!link'=>l('user preferences', 'user/'.$account->uid.'/edit')
+            '@requests'=>implode(' '.t('and').' ', $requests),
+            '@link'=>l('user preferences', 'user/'.$account->uid.'/edit')
           )
         ));
     }

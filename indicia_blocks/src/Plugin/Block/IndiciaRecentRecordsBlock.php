@@ -77,26 +77,28 @@ HTML;
     }
     $r .= '</ul>';
     \report_helper::$javascript .= <<<JS
-mapInitialisationHooks.push(function(div) {
-  var features = [];
-$pointJs
-  if (typeof indiciaData.reportlayer==='undefined') {
-    var defaultStyle = new OpenLayers.Style(OpenLayers.Util.extend(OpenLayers.Feature.Vector.style['default'], {"strokeColor":"#0000ff","fillColor":"#3333cc","fillOpacity":0.6,"strokeWidth":"\${getstrokewidth}"}), {context: { getstrokewidth: function(feature) {
-        var width=feature.geometry.getBounds().right - feature.geometry.getBounds().left,
-          strokeWidth=(width===0) ? 1 : 9 - (width / feature.layer.map.getResolution());
-        return (strokeWidth<2) ? 2 : strokeWidth;
-      } }});
-    var selectStyle = new OpenLayers.Style({"strokeColor":"#ff0000","fillColor":"#ff0000","fillOpacity":0.6,"strokeWidth":"\${getstrokewidth}"}, {context: { getstrokewidth: function(feature) {
-        var width=feature.geometry.getBounds().right - feature.geometry.getBounds().left,
-          strokeWidth=(width===0) ? 1 : 10 - (width / feature.layer.map.getResolution());
-        return (strokeWidth<3) ? 3 : strokeWidth;
-      } }});
-    var styleMap = new OpenLayers.StyleMap({'default' : defaultStyle, 'select' : selectStyle});
-    indiciaData.reportlayer = new OpenLayers.Layer.Vector('Report output', {styleMap: styleMap, rendererOptions: {zIndexing: true}});
-    div.map.addLayer(indiciaData.reportlayer);
-  }
-  indiciaData.reportlayer.addFeatures(features);
-});
+if (typeof mapInitialisationHooks !== 'undefined') {
+  mapInitialisationHooks.push(function(div) {
+    var features = [];
+  $pointJs
+    if (typeof indiciaData.reportlayer==='undefined') {
+      var defaultStyle = new OpenLayers.Style(OpenLayers.Util.extend(OpenLayers.Feature.Vector.style['default'], {"strokeColor":"#0000ff","fillColor":"#3333cc","fillOpacity":0.6,"strokeWidth":"\${getstrokewidth}"}), {context: { getstrokewidth: function(feature) {
+          var width=feature.geometry.getBounds().right - feature.geometry.getBounds().left,
+            strokeWidth=(width===0) ? 1 : 9 - (width / feature.layer.map.getResolution());
+          return (strokeWidth<2) ? 2 : strokeWidth;
+        } }});
+      var selectStyle = new OpenLayers.Style({"strokeColor":"#ff0000","fillColor":"#ff0000","fillOpacity":0.6,"strokeWidth":"\${getstrokewidth}"}, {context: { getstrokewidth: function(feature) {
+          var width=feature.geometry.getBounds().right - feature.geometry.getBounds().left,
+            strokeWidth=(width===0) ? 1 : 10 - (width / feature.layer.map.getResolution());
+          return (strokeWidth<3) ? 3 : strokeWidth;
+        } }});
+      var styleMap = new OpenLayers.StyleMap({'default' : defaultStyle, 'select' : selectStyle});
+      indiciaData.reportlayer = new OpenLayers.Layer.Vector('Report output', {styleMap: styleMap, rendererOptions: {zIndexing: true}});
+      div.map.addLayer(indiciaData.reportlayer);
+    }
+    indiciaData.reportlayer.addFeatures(features);
+  });
+}
 
 JS;
     return [
