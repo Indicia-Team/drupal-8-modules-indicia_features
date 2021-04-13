@@ -1,8 +1,3 @@
-recent-records-block:
-  version: VERSION
-  css:
-    component:
-      css/recent_records_block.css: {}
 es-blocks:
   version: VERSION
   js:
@@ -11,6 +6,12 @@ es-blocks:
     component:
       css/es_blocks.css: {}
   dependencies:
-    - indicia_blocks/recent-records-block
     - iform/base
     - iform/datacomponents
+recent-records-block:
+  version: VERSION
+  css:
+    component:
+      css/recent_records_block.css: {}
+  dependencies:
+    - indicia_blocks/es-blocks

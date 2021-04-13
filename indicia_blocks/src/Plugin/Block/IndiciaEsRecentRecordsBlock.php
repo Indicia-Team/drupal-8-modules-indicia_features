@@ -74,8 +74,12 @@ HTML;
       '#markup' => Markup::create($r),
       '#attached' => [
         'library' => [
-          'indicia_blocks/es-blocks',
+          'indicia_blocks/recent-records-block',
         ],
+      ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
       ],
     ];
   }

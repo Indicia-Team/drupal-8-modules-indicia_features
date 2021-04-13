@@ -39,6 +39,10 @@ class IndiciaEsRecentRecordsMapBlock extends BlockBase {
           'iform/leaflet',
         ],
       ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
+      ],
     ];
   }
 
