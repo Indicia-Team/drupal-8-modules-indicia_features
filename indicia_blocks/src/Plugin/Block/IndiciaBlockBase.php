@@ -44,9 +44,9 @@ abstract class IndiciaBlockBase extends BlockBase {
    * {@inheritdoc}
    */
   public function blockAccess(AccountInterface $account) {
-    $viewPermission = $this->getConfiguration()['view_permission'];
-    if (!empty($viewPermission)) {
-      return AccessResult::allowedIfHasPermission($account, $viewPermission);
+    $config = $this->getConfiguration();
+    if (!empty($config['view_permission'])) {
+      return AccessResult::allowedIfHasPermission($account, $config['view_permission']);
     }
     else {
       return AccessResult::allowed();
