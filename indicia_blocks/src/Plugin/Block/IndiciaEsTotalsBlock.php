@@ -13,7 +13,7 @@ use Drupal\Core\Render\Markup;
  *   admin_label = @Translation("Elasticsearch totals block"),
  * )
  */
-class IndiciaEsTotalsBlock extends BlockBase {
+class IndiciaEsTotalsBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -73,7 +73,20 @@ HTML;
           'indicia_blocks/es-blocks',
         ],
       ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
+      ],
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
+  public function getCacheMaxAge() {
+    return 0;
   }
 
 }

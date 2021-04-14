@@ -15,7 +15,7 @@ use Drupal\Core\Render\Markup;
  *   admin_label = @Translation("Recent Elasticsearch records map block"),
  * )
  */
-class IndiciaEsRecentRecordsMapBlock extends BlockBase {
+class IndiciaEsRecentRecordsMapBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -39,7 +39,19 @@ class IndiciaEsRecentRecordsMapBlock extends BlockBase {
           'iform/leaflet',
         ],
       ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
+      ],
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
+  public function getCacheMaxAge() {
+    return 0;
+  }
 }

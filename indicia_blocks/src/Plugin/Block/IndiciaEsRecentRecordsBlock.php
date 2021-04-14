@@ -13,7 +13,7 @@ use Drupal\Core\Render\Markup;
  *   admin_label = @Translation("Recent Elasticsearch records block"),
  * )
  */
-class IndiciaEsRecentRecordsBlock extends BlockBase {
+class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -77,7 +77,19 @@ HTML;
           'indicia_blocks/es-blocks',
         ],
       ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
+      ],
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
+  public function getCacheMaxAge() {
+    return 0;
+  }
 }
