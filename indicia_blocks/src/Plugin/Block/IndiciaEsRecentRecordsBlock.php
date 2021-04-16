@@ -41,6 +41,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       'proxyCacheTimeout' => 300,
       'filterPath' => $filterPath,
       'initialMapBounds' => TRUE,
+      'sort' => ['id' => 'desc'],
     ];
     // Apply user profile preferences.
     if ($location || $groups) {
