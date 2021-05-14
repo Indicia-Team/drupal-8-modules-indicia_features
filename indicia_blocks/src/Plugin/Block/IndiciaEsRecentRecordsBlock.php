@@ -13,7 +13,7 @@ use Drupal\Core\Render\Markup;
  *   admin_label = @Translation("Recent Elasticsearch records block"),
  * )
  */
-class IndiciaEsRecentRecordsBlock extends BlockBase {
+class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -41,6 +41,7 @@ class IndiciaEsRecentRecordsBlock extends BlockBase {
       'proxyCacheTimeout' => 300,
       'filterPath' => $filterPath,
       'initialMapBounds' => TRUE,
+      'sort' => ['id' => 'desc'],
     ];
     // Apply user profile preferences.
     if ($location || $groups) {
@@ -74,10 +75,22 @@ HTML;
       '#markup' => Markup::create($r),
       '#attached' => [
         'library' => [
-          'indicia_blocks/es-blocks',
+          'indicia_blocks/recent-records-block',
         ],
+      ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
       ],
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
+  public function getCacheMaxAge() {
+    return 0;
+  }
 }

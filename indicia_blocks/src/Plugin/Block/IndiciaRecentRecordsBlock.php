@@ -13,14 +13,7 @@ use Drupal\Core\Form\FormStateInterface;
  *   admin_label = @Translation("Indicia recent records block"),
  * )
  */
-class IndiciaRecentRecordsBlock extends BlockBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public function defaultConfiguration() {
-    return [] + parent::defaultConfiguration();
-  }
+class IndiciaRecentRecordsBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -129,6 +122,7 @@ JS;
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {
+    $form = parent::blockForm($form, $form_state);
     $form['report_parameters'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Report parameters'),
@@ -143,7 +137,8 @@ JS;
    * {@inheritdoc}
    */
   public function blockSubmit($form, FormStateInterface $form_state) {
-    $this->configuration['report_parameters'] = $form_state->getValue('report_parameters');
+    parent::blockSubmit($form, $form_state);
+    $this->setConfigurationValue('report_parameters', $form_state->getValue('report_parameters'));
   }
 
 }

@@ -12,7 +12,7 @@ use Drupal\Core\Block\BlockBase;
  *   admin_label = @Translation("Recent records map block"),
  * )
  */
-class IndiciaRecentRecordsMapBlock extends BlockBase {
+class IndiciaRecentRecordsMapBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}

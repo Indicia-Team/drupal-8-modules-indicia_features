@@ -37,7 +37,7 @@ jQuery(document).ready(function($) {
         mediaDiv = $('<div class="recent-records-images pull-right">');
         $.each(this._source.occurrence.media, function() {
           $(mediaDiv).append('<div class="thumbnail">' +
-            indiciaFns.drawMediaFile(id, this, 'thumb', taxonInfo)
+            indiciaFns.drawMediaFile(id, this, 'thumb')
             + '</div>');
         });
         $(li).append(mediaDiv);

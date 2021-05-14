@@ -6,16 +6,18 @@
 function locations_shp_importer_cron() {
   $folder = \Drupal::service('file_system')->realpath('public://locations_shp_importer/');
   $timeout = 3600;
-  $dir = opendir($folder);
-  // Skip certain file names
-  $exclude = array('.', '..', '.htaccess', 'web.config', '.gitignore');
-  if ($dir) {
-    while ($subdir = readdir($dir)) {
-      $fullPath = $folder . DIRECTORY_SEPARATOR . $subdir;
-      if (!in_array($subdir, $exclude) && is_dir($fullPath)) {
-        if (filemtime($fullPath) < time() - $timeout) {
-          array_map('unlink', array_filter((array) glob($fullPath . DIRECTORY_SEPARATOR . '*') ) );
-          locations_shp_importer_rmdir($fullPath);
+  if (file_exists($folder)) {
+    $dir = opendir($folder);
+    // Skip certain file names
+    $exclude = array('.', '..', '.htaccess', 'web.config', '.gitignore');
+    if ($dir) {
+      while ($subdir = readdir($dir)) {
+        $fullPath = $folder . DIRECTORY_SEPARATOR . $subdir;
+        if (!in_array($subdir, $exclude) && is_dir($fullPath)) {
+          if (filemtime($fullPath) < time() - $timeout) {
+            array_map('unlink', array_filter((array) glob($fullPath . DIRECTORY_SEPARATOR . '*') ) );
+            locations_shp_importer_rmdir($fullPath);
+          }
         }
       }
     }
