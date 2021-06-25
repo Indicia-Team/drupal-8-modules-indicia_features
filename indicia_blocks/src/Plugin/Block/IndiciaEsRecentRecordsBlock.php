@@ -75,7 +75,7 @@ HTML;
       '#markup' => Markup::create($r),
       '#attached' => [
         'library' => [
-          'indicia_blocks/recent-records-block',
+          'indicia_blocks/es-blocks',
         ],
       ],
       '#cache' => [

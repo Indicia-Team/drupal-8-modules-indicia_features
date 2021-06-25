@@ -74,7 +74,20 @@ HTML;
           'indicia_blocks/es-blocks',
         ],
       ],
+      '#cache' => [
+        // No cache please.
+        'max-age' => 0,
+      ],
     ];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Prevent caching.
+   */
+  public function getCacheMaxAge() {
+    return 0;
   }
 
 }

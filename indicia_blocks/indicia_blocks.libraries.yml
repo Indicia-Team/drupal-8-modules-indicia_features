@@ -8,10 +8,3 @@ es-blocks:
   dependencies:
     - iform/base
     - iform/datacomponents
-recent-records-block:
-  version: VERSION
-  css:
-    component:
-      css/recent_records_block.css: {}
-  dependencies:
-    - indicia_blocks/es-blocks
