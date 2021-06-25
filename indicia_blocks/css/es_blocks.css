@@ -4,10 +4,19 @@
 #indicia-es-totals-block-container > div {
   padding: 0 2px;
 }
-#indicia-es-totals-block-container > div > div.loaded {
+#indicia-es-totals-block-container > div > div {
+  /* hide till loaded */
+  opacity: 0;
   text-align: center;
   background: #eee;
   padding: 8px;
+}
+#indicia-es-totals-block-container > div > div.loaded {
+  opacity: 1;
+}
+#indicia-es-totals-block-container > div > div i {
+  margin-right: 15px;
+  margin-left: -8px;
 }
 
 #recent-records-container {

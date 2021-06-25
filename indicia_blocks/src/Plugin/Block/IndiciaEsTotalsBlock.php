@@ -20,6 +20,7 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
    */
   public function build() {
     iform_load_helpers(['ElasticsearchReportHelper']);
+    \helper_base::add_resource('fontawesome');
     \ElasticsearchReportHelper::enableElasticsearchProxy();
     \helper_base::addLanguageStringsToJs('esTotalsBlock', [
       'speciesSingle' => '{1} species',
@@ -53,10 +54,10 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
     ]);
     $template = <<<HTML
 <div id="indicia-es-totals-block-container" class="row">
-  <div class="col-sm-3"><div class="count occurrences"></div></div>
-  <div class="col-sm-3"><div class="count species"></div></div>
-  <div class="col-sm-3"><div class="count photos"></div></div>
-  <div class="col-sm-3"><div class="count recorders"></div></div>
+  <div class="col-sm-3"><div class="count occurrences"><i class="fas fa-map-marker-alt"></i></div></div>
+  <div class="col-sm-3"><div class="count species"><i class="fas fa-sitemap"></i></div></div>
+  <div class="col-sm-3"><div class="count photos"><i class="fas fa-camera"></i></div></div>
+  <div class="col-sm-3"><div class="count recorders"><i class="fas fa-user-friends"></i></div></div>
 </div>
 
 HTML;

@@ -2,10 +2,19 @@
   font-size: 150%;
   > div {
       padding: 0 2px;
-    > div.loaded {
+    > div {
+      /* hide till loaded */
+      opacity: 0;
       text-align: center;
       background: #eee;
       padding: 8px;
+      &.loaded {
+        opacity: 1;
+      }
+      i {
+        margin-right: 15px;
+        margin-left: -8px;
+      }
     }
   }
 }
