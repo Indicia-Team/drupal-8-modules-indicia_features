@@ -53,10 +53,10 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
     ]);
     $template = <<<HTML
 <div id="indicia-es-totals-block-container" class="row">
-  <div class="count occurrences col-sm-3"></div>
-  <div class="count species col-sm-3"></div>
-  <div class="count photos col-sm-3"></div>
-  <div class="count recorders col-sm-3"></div>
+  <div class="col-sm-3"><div class="count occurrences"></div></div>
+  <div class="col-sm-3"><div class="count species"></div></div>
+  <div class="col-sm-3"><div class="count photos"></div></div>
+  <div class="col-sm-3"><div class="count recorders"></div></div>
 </div>
 
 HTML;
@@ -73,20 +73,7 @@ HTML;
           'indicia_blocks/es-blocks',
         ],
       ],
-      '#cache' => [
-        // No cache please.
-        'max-age' => 0,
-      ],
     ];
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * Prevent caching.
-   */
-  public function getCacheMaxAge() {
-    return 0;
   }
 
 }

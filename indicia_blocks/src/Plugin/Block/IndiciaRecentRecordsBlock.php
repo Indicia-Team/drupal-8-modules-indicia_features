@@ -98,7 +98,7 @@ JS;
       '#markup' => $r,
       '#attached' => [
         'library' => [
-          'indicia_blocks/recent-records-block',
+          'indicia_blocks/es-blocks',
           'iform/fancybox',
         ],
       ],

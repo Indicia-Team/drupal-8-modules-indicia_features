@@ -59,10 +59,10 @@ jQuery(document).ready(function($) {
       speciesString = response.aggregations.species_count.value === 1 ? indiciaData.lang.esTotalsBlock.speciesSingle : indiciaData.lang.esTotalsBlock.speciesMulti;
       photosString = response.aggregations.photo_count.doc_count === 1 ? indiciaData.lang.esTotalsBlock.photosSingle : indiciaData.lang.esTotalsBlock.photosMulti;
       recordersString = response.aggregations.recorder_count.value === 1 ? indiciaData.lang.esTotalsBlock.recordersSingle : indiciaData.lang.esTotalsBlock.recordersMulti;
-      $(div).find('.occurrences').append(occsString.replace('{1}', occs));
-      $(div).find('.species').append(speciesString.replace('{1}', response.aggregations.species_count.value));
-      $(div).find('.photos').append(photosString.replace('{1}', response.aggregations.photo_count.doc_count));
-      $(div).find('.recorders').append(recordersString.replace('{1}', response.aggregations.recorder_count.value));
+      $(div).find('.occurrences').append(occsString.replace('{1}', occs)).addClass('loaded');
+      $(div).find('.species').append(speciesString.replace('{1}', response.aggregations.species_count.value)).addClass('loaded');
+      $(div).find('.photos').append(photosString.replace('{1}', response.aggregations.photo_count.doc_count)).addClass('loaded');
+      $(div).find('.recorders').append(recordersString.replace('{1}', response.aggregations.recorder_count.value)).addClass('loaded');
     }
   }
 });
