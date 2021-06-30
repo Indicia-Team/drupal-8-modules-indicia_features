@@ -61,7 +61,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     \ElasticsearchReportHelper::enableElasticsearchProxy();
     $config = $this->getConfiguration();
     $location = hostsite_get_user_field('location');
-    $groups = hostsite_get_user_field('taxon_groups');
+    $groups = hostsite_get_user_field('taxon_groups', FALSE, TRUE);
     $fields = [
       'id',
       'taxon.accepted_name',
@@ -84,7 +84,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     ];
     $options['filterBoolClauses'] = ['must' => []];
     // Apply user profile preferences.
-    if ($location || $groups) {
+    if ($location || !empty($groups)) {
       if ($location) {
         $options['filterBoolClauses']['must'][] = [
           'query_type' => 'term',
@@ -97,7 +97,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
         $options['filterBoolClauses']['must'][] = [
           'query_type' => 'terms',
           'field' => 'taxon.group_id',
-          'value' => json_encode(unserialize($groups)),
+          'value' => json_encode($groups),
         ];
       }
     }
