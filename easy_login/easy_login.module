@@ -19,10 +19,7 @@ function easy_login_user_login(UserInterface $account) {
     // if not first login and we know our indicia user ID, then there is nothing more to do
     return;
   else {
-    // if we've logged in before but don't have a warehouse user ID, then it means Easy Login was installed since
-    // we last logged in. So there might be existing records to move into our user account.
-    $needToProcessExistingRecords = ($account->access->value !== 0) && empty($account->field_indicia_user_id->value);
-    easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords);
+    easy_login_synchronise_account_to_warehouse($account);
     $response = easy_login_call_get_user_id($account);
     easy_login_handle_get_user_id_response($account, $response, TRUE);
   }
@@ -37,14 +34,19 @@ function easy_login_user_presave(EntityInterface $account) {
 
 /**
  * Function to call the get_user_id service on the warehouse.
- * @param object $account User account object
- * @param string $force Set to merge (to force a merge operation) or split (to force no merge).
- * @param array $users_to_merge If force is set to merge, but only some users must be merged,
- * pass an array of the user IDs.
- * @return string Response from call to get_user_id
+ *
+ * @param object $account
+ *   User account object
+ * @param string $force
+ *   Set to merge (to force a merge operation) or split (to force no merge).
+ * @param array $users_to_merge
+ *   If force is set to merge, but only some users must be merged, pass an
+ *   array of the user IDs.
+ *
+ * @return string
+ *   Response from call to get_user_id.
  */
-function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array(),
-                                     $needToProcessExistingRecords=false) {
+function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array()) {
   iform_load_helpers(array('data_entry_helper'));
   $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
   $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
@@ -52,8 +54,6 @@ function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null
   $config = \Drupal::config('iform.settings');
   $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
   $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
-  if ($needToProcessExistingRecords)
-    $url .= '&cms_user_id='.$account->uid;
   $postargs = 'surname='.urlencode($account->field_last_name->value).'&identifiers='.$identifiers;
   if (!empty($account->field_indicia_user_id->value))
     $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
@@ -106,7 +106,7 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
   \Drupal::messenger()->addWarning($response->error);
 }
 
-function easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords) {
+function easy_login_synchronise_account_to_warehouse($account) {
   $fieldsToSyncByCaption = array();
   $account = \Drupal\user\Entity\User::load($account->uid->value);
   foreach ($account as $field => $def) {
@@ -147,7 +147,7 @@ function easy_login_synchronise_account_to_warehouse($account, $needToProcessExi
     }
   }
   easy_login_move_form_data_into_account($edit, $account);
-  $response=easy_login_call_get_user_id($account, null, null, $fieldsToSyncByCaption, $needToProcessExistingRecords);
+  $response=easy_login_call_get_user_id($account, null, null, $fieldsToSyncByCaption);
   easy_login_handle_get_user_id_response($account, $response);
 */
 }
