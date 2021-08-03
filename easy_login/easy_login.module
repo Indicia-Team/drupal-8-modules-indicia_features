@@ -46,8 +46,8 @@ function easy_login_user_presave(EntityInterface $account) {
  * @return string
  *   Response from call to get_user_id.
  */
-function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null, $fieldsToSyncByCaption=array()) {
-  iform_load_helpers(array('data_entry_helper'));
+function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = NULL, $fieldsToSyncByCaption = []) {
+  iform_load_helpers(['data_entry_helper']);
   $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
   $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
   $identifiers = urlencode(json_encode($identifiers));
@@ -78,9 +78,13 @@ function easy_login_call_get_user_id($account, $force=null, $users_to_merge=null
 
 /**
  * Handle the response from a call to get_user_id on the warehouse services.
- * @param object $account User object to save to
- * @param string $response Response from call to get_user_id (should be a json string).
- * @param boolean $save Should the updated account be saved?
+ *
+ * @param object $account
+ *   User object to save to
+ * @param string $response
+ *   Response from call to get_user_id (should be a json string).
+ * @param boolean $save
+ *   Should the updated account be saved?
  */
 function easy_login_handle_get_user_id_response($account, $response, $save) {
   $response = json_decode($response);
@@ -107,7 +111,7 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
 }
 
 function easy_login_synchronise_account_to_warehouse($account) {
-  $fieldsToSyncByCaption = array();
+  $fieldsToSyncByCaption = [];
   $account = \Drupal\user\Entity\User::load($account->uid->value);
   foreach ($account as $field => $def) {
     // @todo The following should only pick up field values that have actually changed.
@@ -130,7 +134,7 @@ function easy_login_synchronise_account_to_warehouse($account) {
     if ($account->uid===$user->uid) {
       // If the user has not filled in preferences then prompt them. Allow for the fact that the site administrator might have
       // hidden these fields if they feel they are not relevant to the site.
-      $requests = array();
+      $requests = [];
       // $account->field_taxon_groups etc contains something if the field exist
       if (isset($account->field_location) && empty($edit['field_location'][LANGUAGE_NONE]))
         $requests[] = t('the area you would most often like to record in');
@@ -147,7 +151,7 @@ function easy_login_synchronise_account_to_warehouse($account) {
     }
   }
   easy_login_move_form_data_into_account($edit, $account);
-  $response=easy_login_call_get_user_id($account, null, null, $fieldsToSyncByCaption);
+  $response=easy_login_call_get_user_id($account, NULL, NULL, $fieldsToSyncByCaption);
   easy_login_handle_get_user_id_response($account, $response);
 */
 }
