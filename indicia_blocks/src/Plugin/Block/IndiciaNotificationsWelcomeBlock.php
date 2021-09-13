@@ -32,6 +32,12 @@ class IndiciaNotificationsWelcomeBlock extends IndiciaBlockBase {
       '#description' => $this->t("Path to the page showing a user's notifications."),
       '#default_value' => isset($config['notifications_page_path']) ? $config['notifications_page_path'] : 'notifications',
     ];
+    $form['taxon_meaning_id'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Limit to taxon meaning ID'),
+      '#description' => $this->t('If only notifications for a particular subset of taxa should be counted, insert the taxon_meaning_id of the higher taxon encapsulating the group here.'),
+      '#default_value' => isset($config['taxon_meaning_id']) ? $config['taxon_meaning_id'] : NULL,
+    ];
 
     return $form;
   }
@@ -43,6 +49,7 @@ class IndiciaNotificationsWelcomeBlock extends IndiciaBlockBase {
     parent::blockSubmit($form, $form_state);
     // Save our custom settings when the form is submitted.
     $this->setConfigurationValue('notifications_page_path', $form_state->getValue('notifications_page_path'));
+    $this->setConfigurationValue('taxon_meaning_id', $form_state->getValue('taxon_meaning_id'));
   }
 
   /**
@@ -98,21 +105,25 @@ HTML;
    *   Count of unread notifications.
    */
   private function getNotificationsCount($userId, array $readAuth, $websiteId) {
-    $training = hostsite_get_user_field('training') === TRUE ? 't' : 'f';
+    $config = $this->getConfiguration();
+    $params = [
+      'user_id' => $userId,
+      'source_filter' => 'all',
+      'system_name' => '',
+      'default_edit_page_path' => '',
+      'view_record_page_path' => '',
+      'website_id' => $websiteId,
+      'training' => hostsite_get_user_field('training') === TRUE ? 't' : 'f',
+      'wantRecords' => 0,
+      'wantCount' => 1,
+    ];
+    if ($config['taxon_meaning_id']) {
+      $params['taxon_meaning_id'] = $config['taxon_meaning_id'];
+    }
     $data = \report_helper::get_report_data([
       'dataSource' => 'library/notifications/notifications_list_for_notifications_centre',
       'readAuth' => $readAuth,
-      'extraParams' => [
-        'user_id' => $userId,
-        'source_filter' => 'all',
-        'system_name' => '',
-        'default_edit_page_path' => '',
-        'view_record_page_path' => '',
-        'website_id' => $websiteId,
-        'wantRecords' => 0,
-        'wantCount' => 1,
-
-      ],
+      'extraParams' => $params,
     ]);
     return $data['count'];
   }
