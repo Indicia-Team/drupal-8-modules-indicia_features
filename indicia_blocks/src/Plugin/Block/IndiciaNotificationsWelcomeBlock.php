@@ -113,7 +113,7 @@ HTML;
       'default_edit_page_path' => '',
       'view_record_page_path' => '',
       'website_id' => $websiteId,
-      'training' => hostsite_get_user_field('training') === TRUE ? 't' : 'f',
+      'training' => hostsite_get_user_field('training') === TRUE ? 'true' : 'false',
       'wantRecords' => 0,
       'wantCount' => 1,
     ];
