@@ -50,16 +50,16 @@ class IndiciaNotificationsWelcomeBlock extends IndiciaBlockBase {
    */
   public function build() {
     $r = '';
-    iform_load_helpers(['data_entry_helper']);
+    iform_load_helpers(['report_helper']);
     $connection = iform_get_connection_details();
     $userId = hostsite_get_user_field('indicia_user_id');
     if (empty($connection['website_id']) || empty($connection['password'])) {
       $this->messenger()->addWarning('Indicia configuration incomplete.');
     }
     elseif ($userId) {
-      $readAuth = \data_entry_helper::get_read_auth($connection['website_id'], $connection['password']);
+      $readAuth = \report_helper::get_read_auth($connection['website_id'], $connection['password']);
       $name = $this->getUserDisplayName();
-      $notificationsCount = $this->getNotificationsCount($userId, $readAuth);
+      $notificationsCount = $this->getNotificationsCount($userId, $readAuth, $connection['website_id']);
       $message = $this->getWelcomeMessage($name, $notificationsCount);
       // @todo Theme function for the following.
       // @todo Configurable notifications link.
@@ -91,17 +91,30 @@ HTML;
    *   Warehouse user ID.
    * @param array $readAuth
    *   Authorisation tokens.
+   * @param int $websiteId
+   *   ID of the current website.
    *
    * @return int
    *   Count of unread notifications.
    */
-  private function getNotificationsCount($userId, array $readAuth) {
+  private function getNotificationsCount($userId, array $readAuth, $websiteId) {
     $training = hostsite_get_user_field('training') === TRUE ? 't' : 'f';
-    $query = json_encode(['in' => ['training' => [$training, NULL]]]);
-    $request = \data_entry_helper::$base_url . "index.php/services/data/notification?auth_token=$readAuth[auth_token]&nonce=$readAuth[nonce]";
-    $request .= "&query=$query&user_id=$userId&acknowledged=f&wantRecords=0&wantCount=1";
-    $notificationsData = \data_entry_helper::http_post($request);
-    return json_decode($notificationsData['output'])->count;
+    $data = \report_helper::get_report_data([
+      'dataSource' => 'library/notifications/notifications_list_for_notifications_centre',
+      'readAuth' => $readAuth,
+      'extraParams' => [
+        'user_id' => $userId,
+        'source_filter' => 'all',
+        'system_name' => '',
+        'default_edit_page_path' => '',
+        'view_record_page_path' => '',
+        'website_id' => $websiteId,
+        'wantRecords' => 0,
+        'wantCount' => 1,
+
+      ],
+    ]);
+    return $data['count'];
   }
 
   /**
@@ -121,7 +134,7 @@ HTML;
       $config = $this->getConfiguration();
       $link = empty($config['notifications_page_path']) ? 'notifications' : $config['notifications_page_path'];
       $siteRoot = \Drupal::urlGenerator()->generateFromRoute('<front>', [], ['absolute' => TRUE]);
-      $notificationsInfo = $notificationsCount === 1 ? $this->t("You have 1 new notification.") : $this->t("You have @count new notifications.", ['@count' => $notificationsCount]);
+      $notificationsInfo = $notificationsCount === 1 ? $this->t("You have 1 unread notification.") : $this->t("You have @count unread notifications.", ['@count' => $notificationsCount]);
       $message = "<i class=\"fas fa-envelope\"></i> $message <a href=\"$siteRoot$link\" class=\"alert-link\">$notificationsInfo</a>";
     }
     return $message;
