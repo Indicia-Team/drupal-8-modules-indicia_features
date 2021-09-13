@@ -35,8 +35,14 @@ class IndiciaNotificationsWelcomeBlock extends IndiciaBlockBase {
     $form['taxon_meaning_id'] = [
       '#type' => 'number',
       '#title' => $this->t('Limit to taxon meaning ID'),
-      '#description' => $this->t('If only notifications for a particular subset of taxa should be counted, insert the taxon_meaning_id of the higher taxon encapsulating the group here.'),
+      '#description' => $this->t('If only notifications for a particular branch of taxa should be counted, insert the taxon_meaning_id of the higher taxon encapsulating the group here.'),
       '#default_value' => isset($config['taxon_meaning_id']) ? $config['taxon_meaning_id'] : NULL,
+    ];
+    $form['taxon_group_id'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Limit to taxon group ID'),
+      '#description' => $this->t('If only notifications for a particular group of taxa should be counted, insert the taxon_group_id here.'),
+      '#default_value' => isset($config['taxon_group_id']) ? $config['taxon_group_id'] : NULL,
     ];
 
     return $form;
@@ -50,6 +56,7 @@ class IndiciaNotificationsWelcomeBlock extends IndiciaBlockBase {
     // Save our custom settings when the form is submitted.
     $this->setConfigurationValue('notifications_page_path', $form_state->getValue('notifications_page_path'));
     $this->setConfigurationValue('taxon_meaning_id', $form_state->getValue('taxon_meaning_id'));
+    $this->setConfigurationValue('taxon_group_id', $form_state->getValue('taxon_group_id'));
   }
 
   /**
@@ -119,6 +126,9 @@ HTML;
     ];
     if ($config['taxon_meaning_id']) {
       $params['taxon_meaning_id'] = $config['taxon_meaning_id'];
+    }
+    if ($config['taxon_group_id']) {
+      $params['taxon_group_id'] = $config['taxon_group_id'];
     }
     $data = \report_helper::get_report_data([
       'dataSource' => 'library/notifications/notifications_list_for_notifications_centre',
