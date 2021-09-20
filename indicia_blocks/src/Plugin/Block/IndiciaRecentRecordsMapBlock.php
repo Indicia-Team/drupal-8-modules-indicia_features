@@ -2,7 +2,7 @@
 
 namespace Drupal\indicia_blocks\Plugin\Block;
 
-use Drupal\Core\Block\BlockBase;
+use Drupal\Component\Render\FormattableMarkup;
 
 /**
  * Provides a 'Recent Records Map' block.
@@ -37,7 +37,7 @@ class IndiciaRecentRecordsMapBlock extends IndiciaBlockBase {
     ]);
     $r .= '</div>';
     return [
-      '#markup' => $r,
+      '#markup' => new FormattableMarkup($r, []),
       '#attached' => [
         'library' => [
           'iform/base',

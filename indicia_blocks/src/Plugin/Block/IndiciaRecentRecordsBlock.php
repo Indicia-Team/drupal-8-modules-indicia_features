@@ -2,8 +2,8 @@
 
 namespace Drupal\indicia_blocks\Plugin\Block;
 
-use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Component\Render\FormattableMarkup;
 
 /**
  * Provides a 'Recent Records' block.
@@ -95,7 +95,7 @@ if (typeof mapInitialisationHooks !== 'undefined') {
 
 JS;
     return [
-      '#markup' => $r,
+      '#markup' => new FormattableMarkup($r, []),
       '#attached' => [
         'library' => [
           'indicia_blocks/es-blocks',
