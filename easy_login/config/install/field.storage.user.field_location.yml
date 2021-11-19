@@ -10,7 +10,7 @@ entity_type: user
 type: list_integer
 settings:
   allowed_values: {  }
-  allowed_values_function: ''
+  allowed_values_function: 'easy_login_allowed_locations'
 module: options
 locked: false
 cardinality: 1
