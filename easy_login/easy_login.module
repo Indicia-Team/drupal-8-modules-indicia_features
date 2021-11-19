@@ -3,6 +3,7 @@
 use Drupal\Core\Link;
 use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
+use \Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_user_login().
@@ -30,6 +31,77 @@ function easy_login_user_presave(EntityInterface $account) {
     $response = easy_login_call_get_user_id($account);
     easy_login_handle_get_user_id_response($account, $response, FALSE);
   }
+}
+
+/**
+ * Hide user preferences fields from registration form or if config incomplete.
+ */
+function easy_login_form_user_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id === 'user_register_form' || !hostsite_get_config_value('iform', 'master_checklist_id', 0)) {
+    unset($form['field_taxon_groups']);
+  }
+  if ($form_id === 'user_register_form' || !hostsite_get_config_value('iform', 'profile_location_type_id', 0)) {
+    unset($form['field_location']);
+  }
+  $form['#attached']['library'][] = 'easy_login/user-form';
+}
+
+/**
+ * Callback for the allowed options for the species groups preference.
+ *
+ * @return array
+ *   Returns a list of groups used in the configured list.
+ */
+function easy_login_allowed_taxon_groups() {
+  $checklistId = hostsite_get_config_value('iform', 'master_checklist_id', 0);
+  if ($checklistId) {
+    iform_load_helpers(['data_entry_helper']);
+    $conn = iform_get_connection_details();
+    $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
+    // Load the list of taxon groups. If we have a master list setting for the site, use this to ensure we only pick up
+    // groups that are in use on the site.
+    $response = data_entry_helper::get_population_data([
+      'report' => 'library/taxon_groups/taxon_groups_used_in_checklist',
+      'extraParams' => $readAuth + array('taxon_list_id' => $checklistId),
+    ]);
+    $groups = [];
+    foreach ($response as $group) {
+      $groups[$group['id']]=$group['title'];
+    }
+    return $groups;
+  }
+  else {
+    return [];
+  }
+}
+
+/**
+ * Callback for the allowed options for the locations preference.
+ *
+ * @return array
+ *   Returns a list of locations of the configured type.
+ */
+function easy_login_allowed_locations() {
+  $locationTypeId = hostsite_get_config_value('iform', 'profile_location_type_id', 0);
+  if ($locationTypeId) {
+    iform_load_helpers(['data_entry_helper']);
+    $conn = iform_get_connection_details();
+    $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
+    $response = data_entry_helper::get_population_data(array(
+      'table' => 'location',
+      'extraParams' => $readAuth + [
+        'orderby' => 'name',
+        'sortdir' => 'ASC',
+        'location_type_id' => $locationTypeId,
+      ],
+    ));
+    $locations = [];
+    foreach ($response as $location) {
+      $locations[$location['id']] = $location['name'];
+    }
+    return $locations;
+  }
+  return [];
 }
 
 /**
@@ -75,7 +147,6 @@ function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = 
   return $response['output'];
 }
 
-
 /**
  * Handle the response from a call to get_user_id on the warehouse services.
  *
@@ -102,12 +173,15 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
       if ($save)
         $account->save();
     }
-  } elseif (isset($response->possibleMatches)) {
+  }
+  elseif (isset($response->possibleMatches)) {
     $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
     $_SESSION['uid_to_resolve'] = $account->id();
     hostsite_goto_page('easy_login/resolve_multiple_users');
-  } elseif (isset($response->error))
-  \Drupal::messenger()->addWarning($response->error);
+  }
+  elseif (isset($response->error)) {
+    \Drupal::messenger()->addWarning($response->error);
+  }
 }
 
 function easy_login_synchronise_account_to_warehouse($account) {
