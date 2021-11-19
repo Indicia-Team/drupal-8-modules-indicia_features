@@ -12,24 +12,27 @@ function easy_login_install() {
   \Drupal::entityTypeManager()
     ->getStorage('entity_form_display')
     ->load('user.user.default')
-    ->setComponent('field_first_name', array(
+    ->setComponent('field_first_name', [
         'type' => 'string_textfield',
         'weight' => 1,
-        'settings' => array (
+        'settings' => [
           'size' => 60,
           'placeholder' => ''
-        ),
-        'third_party_settings' => array ( )
-    ))
-    ->setComponent('field_last_name', array(
+        ],
+        'third_party_settings' => [],
+    ])
+    ->setComponent('field_last_name', [
       'type' => 'string_textfield',
       'weight' => 2,
-      'settings' => array (
+      'settings' => [
         'size' => 60,
         'placeholder' => ''
-      ),
-      'third_party_settings' => array ( )
-    ))
+      ],
+      'third_party_settings' => [],
+    ])
+    ->setComponent('field_taxon_groups', [
+      'type' => 'options_buttons',
+    ])
     ->save();
 
   // Add new fields to the user view
