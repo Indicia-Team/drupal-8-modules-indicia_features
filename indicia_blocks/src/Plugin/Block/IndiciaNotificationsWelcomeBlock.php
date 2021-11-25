@@ -124,10 +124,10 @@ HTML;
       'wantRecords' => 0,
       'wantCount' => 1,
     ];
-    if ($config['taxon_meaning_id']) {
+    if (!empty($config['taxon_meaning_id'])) {
       $params['taxon_meaning_id'] = $config['taxon_meaning_id'];
     }
-    if ($config['taxon_group_id']) {
+    if (!empty($config['taxon_group_id'])) {
       $params['taxon_group_id'] = $config['taxon_group_id'];
     }
     $data = \report_helper::get_report_data([
