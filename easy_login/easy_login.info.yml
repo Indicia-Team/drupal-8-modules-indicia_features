@@ -1,6 +1,6 @@
 name: 'Easy login'
 description: 'Configures Drupal login to integrate with Indicia.'
-core: 6.10.0
+core: 8.x
 core_version_requirement: ^8 || ^9
 version: "6.10.0"
 package: "Indicia"
