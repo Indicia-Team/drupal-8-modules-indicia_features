@@ -80,7 +80,7 @@ function indicia_auto_exports_form_alter(&$form, \Drupal\Core\Form\FormStateInte
     foreach ($groups as $group) {
       $options[$group['id']] = $group['title'];
     }
-    $form['elements']['group']['#options'] = $options;
+    $form['elements']['export_settings']['group']['#options'] = $options;
   }
 }
 
