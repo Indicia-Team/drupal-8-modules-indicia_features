@@ -201,7 +201,7 @@ class ExportHelper {
     $url = $this->options['elasticsearchHost'] . '/' . $this->options['index'] . '/_search';
     $query = [
       'query' => $this->options['query'],
-      'size' => 2,
+      'size' => 1000,
       'sort' => [['id' => 'ASC']],
     ];
     $csvFile = $this->getOutputCsvFileName();
