@@ -1,0 +1,164 @@
+<eml:eml xmlns:eml="eml://ecoinformatics.org/eml-2.1.1"
+         xmlns:dc="http://purl.org/dc/terms/"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemalocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd"
+         packageid="todo {{ packageid }}"
+         system="http://gbif.org"
+         scope="system"
+         xml:lang="eng">
+  <dataset>
+    {% for identifier in alternate_identifiers %}
+      <alternateIdentifier>{{ identifier }}</alternateIdentifier>
+    {% endfor %}
+    <title xml:lang="eng">{{ title }}</title>
+    {% for contact in resource_creators %}
+    <creator>{% include 'eml-contact.html.twig' %}</creator>
+    {% endfor %}
+    {% for contact in metadata_providers %}
+    <metadataProvider>{% include 'eml-contact.html.twig' %}</metadataProvider>
+    {% endfor %}
+    {% for contact in resource_contacts %}
+    <contact>
+      {% include 'eml-contact.html.twig' %}
+    </contact>
+    {% endfor %}
+
+    <pubDate>
+      todo {{ pub_date }}
+    </pubDate>
+    <language>todo {{ language }}</language>
+    <abstract>
+      {% for para in description %}
+        <para>{{ para }}</para>
+      {% endfor %}
+    </abstract>
+    <keywordSet>
+      <keyword>TODO keyword sets and keywords</keyword>
+      <keywordThesaurus>TODO keyword thesarus</keywordThesaurus>
+    </keywordSet>
+    <intellectualRights>
+      <para>
+        This work is licensed under a
+        <ulink url="{{ licence_url }}">
+          <citetitle>{{ licence_name }}</citetitle>
+        </ulink>
+        .
+      </para>
+    </intellectualRights>
+    <distribution scope="document">
+      <online>
+        <url function="information">todo {{ resource_homepage }}</url>
+      </online>
+    </distribution>
+    <coverage>
+      <geographicCoverage>
+        <geographicDescription>{{ geographic_description }}</geographicDescription>
+        {% if west_coord and east_coord and north_coord and south_coord %}
+          <boundingCoordinates>
+            <westBoundingCoordinate>todo {{ west_coord }}</westBoundingCoordinate>
+            <eastBoundingCoordinate>todo {{ east_coord }}</eastBoundingCoordinate>
+            <northBoundingCoordinate>todo {{ north_coord }}</northBoundingCoordinate>
+            <southBoundingCoordinate>todo {{ south_coord }}</southBoundingCoordinate>
+          </boundingCoordinates>
+        {% endif %}
+      </geographicCoverage>
+      <temporalCoverage>
+        <rangeOfDates>
+          <beginDate>
+            <calendarDate>todo {{ begin_date }}</calendarDate>
+          </beginDate>
+          <endDate>
+            <calendarDate>todo {{ end_date }}</calendarDate>
+          </endDate>
+        </rangeOfDates>
+      </temporalCoverage>
+    </coverage>
+    <purpose>
+      <para>{{ dataset_purpose }}</para>
+    </purpose>
+    <maintenance>
+      <description>
+        <para>todo {{ maintenance_description }}</para>
+      </description>
+      <maintenanceUpdateFrequency>todo (from where?) {{ maintenance_frequency }}</maintenanceUpdateFrequency>
+    </maintenance>
+
+    <methods>
+    {% for step in step_descriptions %}
+      <methodStep>
+        <description>
+          <para>{{ step }}</para>
+        </description>
+      </methodStep>
+    {% endfor %}
+      <sampling>
+        <studyExtent>
+          <description>
+            <para>{{ study_extent }}</para>
+          </description>
+        </studyExtent>
+        <samplingDescription>
+          <para>{{ sampling_description }}</para>
+        </samplingDescription>
+      </sampling>
+      {% if quality_control %}
+      <qualityControl>
+        <description>
+          <para>{{ quality_control }}</para>
+        </description>
+      </qualityControl>
+      {% endif %}
+    </methods>
+    <project{% if project_identifier %} id="{{ project_identifier }}"{% endif %}>
+      <title>{{ project_title }}</title>
+      {% for person in project_personnel %}
+      <personnel>
+        <individualName>
+          {% if person.first_name %}
+          <givenName>{{ person.first_name }}</givenName>
+          {% endif %}
+          <surName>{{ person.surname }}</surName>
+        </individualName>
+        {% if person.personnel_directory and person.personnel_identifier %}
+        <userId directory="{{ person.personnel_directory }}">{{ person.personnel_identifier }}</userId>
+        {% endif %}
+        <role>author</role>
+      </personnel>
+      {% endfor %}
+      {% if project_description %}
+      <abstract>
+        <para>{{ project_description }}</para>
+      </abstract>
+      {% endif %}
+      {% if project_funding %}
+      <funding>
+        <para>{{ project_funding }}</para>
+      </funding>
+      {% endif %}
+      {% if project_study_area_description %}
+      <studyAreaDescription>
+        <descriptor name="generic" citableclassificationsystem="false">
+          <descriptorValue>{{ project_study_area_description }}</descriptorValue>
+        </descriptor>
+      </studyAreaDescription>
+      {% endif %}
+      {% if project_design_description %}
+      <designDescription>
+        <description>
+          <para>{{ project_design_description }}</para>
+        </description>
+      </designDescription>
+      {% endif %}
+    </project>
+  </dataset>
+  <additionalMetadata>
+    <metadata>
+      <gbif>
+        <citation>{{ resource_citation }}</citation>
+        {% if resource_citation_identifier %}
+          <citationIdentifier>{{ resource_citation_identifier }}</citationIdentifier>
+        {% endif %}
+      </gbif>
+    </metadata>
+  </additionalMetadata>
+</eml:eml>
