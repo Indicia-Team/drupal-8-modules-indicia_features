@@ -1,8 +1,8 @@
-<eml:eml xmlns:eml="eml://ecoinformatics.org/eml-2.1.1"
+<eml:eml xmlns:eml="https://eml.ecoinformatics.org/eml-2.2.0"
          xmlns:dc="http://purl.org/dc/terms/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemalocation="eml://ecoinformatics.org/eml-2.1.1 http://rs.gbif.org/schema/eml-gbif-profile/1.1/eml.xsd"
-         packageid="todo {{ packageid }}"
+         xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 xsd/eml.xsd"
+         packageId="todo {{ packageid }}"
          system="http://gbif.org"
          scope="system"
          xml:lang="eng">
@@ -12,30 +12,37 @@
     {% endfor %}
     <title xml:lang="eng">{{ title }}</title>
     {% for contact in resource_creators %}
-    <creator>{% include 'eml-contact.html.twig' %}</creator>
+      <creator>
+        {% include 'eml-contact.html.twig' %}
+      </creator>
     {% endfor %}
     {% for contact in metadata_providers %}
-    <metadataProvider>{% include 'eml-contact.html.twig' %}</metadataProvider>
+      <metadataProvider>
+        {% include 'eml-contact.html.twig' %}
+      </metadataProvider>
     {% endfor %}
     {% for contact in resource_contacts %}
-    <contact>
-      {% include 'eml-contact.html.twig' %}
-    </contact>
+      <contact>
+        {% include 'eml-contact.html.twig' %}
+      </contact>
     {% endfor %}
-
-    <pubDate>
-      todo {{ pub_date }}
-    </pubDate>
+    {% if date_last_published %}
+      <pubDate>{{ date_last_published }}</pubDate>
+    {% endif %}
     <language>todo {{ language }}</language>
     <abstract>
       {% for para in description %}
         <para>{{ para }}</para>
       {% endfor %}
     </abstract>
-    <keywordSet>
-      <keyword>TODO keyword sets and keywords</keyword>
-      <keywordThesaurus>TODO keyword thesarus</keywordThesaurus>
-    </keywordSet>
+    {% for set in keyword_sets %}
+      <keywordSet>
+        {% for keyword in set.keywords|split(',') %}
+          <keyword>{{ keyword|trim }}</keyword>
+        {% endfor %}
+        <keywordThesaurus>{{ set.thesaurus_vocabulary }}</keywordThesaurus>
+      </keywordSet>
+    {% endfor %}
     <intellectualRights>
       <para>
         This work is licensed under a
@@ -55,32 +62,36 @@
         <geographicDescription>{{ geographic_description }}</geographicDescription>
         {% if west_coord and east_coord and north_coord and south_coord %}
           <boundingCoordinates>
-            <westBoundingCoordinate>todo {{ west_coord }}</westBoundingCoordinate>
-            <eastBoundingCoordinate>todo {{ east_coord }}</eastBoundingCoordinate>
-            <northBoundingCoordinate>todo {{ north_coord }}</northBoundingCoordinate>
-            <southBoundingCoordinate>todo {{ south_coord }}</southBoundingCoordinate>
+            <westBoundingCoordinate>{{ west_coord }}</westBoundingCoordinate>
+            <eastBoundingCoordinate>{{ east_coord }}</eastBoundingCoordinate>
+            <northBoundingCoordinate>{{ north_coord }}</northBoundingCoordinate>
+            <southBoundingCoordinate>{{ south_coord }}</southBoundingCoordinate>
           </boundingCoordinates>
         {% endif %}
       </geographicCoverage>
-      <temporalCoverage>
-        <rangeOfDates>
-          <beginDate>
-            <calendarDate>todo {{ begin_date }}</calendarDate>
-          </beginDate>
-          <endDate>
-            <calendarDate>todo {{ end_date }}</calendarDate>
-          </endDate>
-        </rangeOfDates>
-      </temporalCoverage>
+      {% for coverage in temporal_info %}
+        <temporalCoverage>
+          <rangeOfDates>
+            <beginDate>
+              <calendarDate>{{ coverage.start_date }}</calendarDate>
+            </beginDate>
+            <endDate>
+              <calendarDate>{{ coverage.end_date }}</calendarDate>
+            </endDate>
+          </rangeOfDates>
+        </temporalCoverage>
+      {% endfor %}
     </coverage>
     <purpose>
       <para>{{ dataset_purpose }}</para>
     </purpose>
     <maintenance>
-      <description>
-        <para>todo {{ maintenance_description }}</para>
-      </description>
-      <maintenanceUpdateFrequency>todo (from where?) {{ maintenance_frequency }}</maintenanceUpdateFrequency>
+      {% if maintenance_description %}
+        <description>
+          <para>{{ maintenance_description }}</para>
+        </description>
+      {% endif %}
+      <maintenanceUpdateFrequency>{{ update_frequency }}</maintenanceUpdateFrequency>
     </maintenance>
 
     <methods>
