@@ -3,10 +3,6 @@ status: open
 dependencies:
   module:
     - indicia_auto_exports
-    - webform_anonymizer
-third_party_settings:
-  webform_anonymizer:
-    anonymize_setting: 0
 open: null
 close: null
 weight: 0
