@@ -2,10 +2,9 @@
          xmlns:dc="http://purl.org/dc/terms/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="https://eml.ecoinformatics.org/eml-2.2.0 xsd/eml.xsd"
-         packageId="todo {{ packageid }}"
          system="http://gbif.org"
          scope="system"
-         xml:lang="eng">
+         xml:lang="{{ metadata_language }}">
   <dataset>
     {% for identifier in alternate_identifiers %}
       <alternateIdentifier>{{ identifier }}</alternateIdentifier>
@@ -26,10 +25,15 @@
         {% include 'eml-contact.html.twig' %}
       </contact>
     {% endfor %}
+    {% for contact in associated_parties %}
+      <associatedParty>
+        {% include 'eml-contact.html.twig' %}
+      </associatedParty>
+    {% endfor %}
     {% if date_last_published %}
       <pubDate>{{ date_last_published }}</pubDate>
     {% endif %}
-    <language>todo {{ language }}</language>
+    <language>{{ data_language }}</language>
     <abstract>
       {% for para in description %}
         <para>{{ para }}</para>
@@ -43,13 +47,18 @@
         <keywordThesaurus>{{ set.thesaurus_vocabulary }}</keywordThesaurus>
       </keywordSet>
     {% endfor %}
+    {% if subtype %}
+      <keywordSet>
+        <keyword>{{ subtype }}</keyword>
+        <keywordThesaurus>GBIF Dataset Subtype Vocabulary: http://rs.gbif.org/vocabulary/gbif/dataset_subtype.xml</keywordThesaurus>
+      </keywordSet>
+    {% endif %}
     <intellectualRights>
       <para>
         This work is licensed under a
         <ulink url="{{ licence_url }}">
           <citetitle>{{ licence_name }}</citetitle>
-        </ulink>
-        .
+        </ulink>.
       </para>
     </intellectualRights>
     <distribution scope="document">
@@ -80,6 +89,27 @@
             </endDate>
           </rangeOfDates>
         </temporalCoverage>
+      {% endfor %}
+      {% for coverage in taxonomic_coverage_list %}
+      <taxonomicCoverage>
+        {% if coverage.description %}
+          <generalTaxonomicCoverage>{{ coverage.description }}</generalTaxonomicCoverage>
+        {% endif %}
+        {% if coverage.taxon_list %}
+          {% for taxon in coverage.taxon_list|split("\n") %}
+            {% set parts = taxon|split(';') %}
+            <taxonomicClassification>
+            {% if parts[2] %}
+              <taxonRankName>{{ parts[2]|trim }}</taxonRankName>
+            {% endif %}
+            <taxonRankValue>{{ parts[0]|trim  }}</taxonRankValue>
+            {% if parts[1] %}
+              <commonName>{{ parts[1]|trim  }}</commonName>
+            {% endif %}
+          </taxonomicClassification>
+          {% endfor %}
+        {% endif %}
+      </taxonomicCoverage>
       {% endfor %}
     </coverage>
     <purpose>
@@ -165,10 +195,14 @@
   <additionalMetadata>
     <metadata>
       <gbif>
-        <citation>{{ resource_citation }}</citation>
-        {% if resource_citation_identifier %}
-          <citationIdentifier>{{ resource_citation_identifier }}</citationIdentifier>
-        {% endif %}
+        <citation{% if resource_citation_identifier %} identifer="{{ resource_citation_identifier }}"{% endif %}>{{ resource_citation }}</citation>
+        {% if bibliographic_citations -%}
+          <bibliography>
+          {% for citation in bibliographic_citations -%}
+            <citation{% if citation.citation_identifier %} identifer="{{ citation.citation_identifier }}"{% endif %}>{{ citation.citation }}</citation>
+          {% endfor -%}
+          </bibliography>
+        {% endif -%}
       </gbif>
     </metadata>
   </additionalMetadata>
