@@ -63,7 +63,7 @@
     </intellectualRights>
     <distribution scope="document">
       <online>
-        <url function="information">todo {{ resource_homepage }}</url>
+        <url function="information">{{ resource_homepage }}</url>
       </online>
     </distribution>
     <coverage>
@@ -78,17 +78,26 @@
           </boundingCoordinates>
         {% endif %}
       </geographicCoverage>
-      {% for coverage in temporal_info %}
+      {% for date in temporal_coverage_single_date -%}
+      <singleDateTime>
+        <calendarDate>{{ date }}</calendarDate>
+      </singleDateTime>
+      {% endfor -%}
+      {% for range in temporal_coverage_date_range %}
         <temporalCoverage>
           <rangeOfDates>
             <beginDate>
-              <calendarDate>{{ coverage.start_date }}</calendarDate>
+              <calendarDate>{{ range.start_date }}</calendarDate>
             </beginDate>
             <endDate>
-              <calendarDate>{{ coverage.end_date }}</calendarDate>
+              <calendarDate>{{ range.end_date }}</calendarDate>
             </endDate>
           </rangeOfDates>
         </temporalCoverage>
+      {% endfor %}
+      {% for period in temporal_coverage_living_time_period %}
+
+
       {% endfor %}
       {% for coverage in taxonomic_coverage_list %}
       <taxonomicCoverage>
@@ -203,6 +212,67 @@
           {% endfor -%}
           </bibliography>
         {% endif -%}
+        {% for format in other_data_formats -%}
+        <physical>
+          <objectName>{{ format.name }}</objectName>
+          <characterEncoding>{{ format.character_set }}</characterEncoding>
+          <dataFormat>
+            <externallyDefinedFormat>
+              <formatName>{{ format.data_format }}</formatName>
+              {% if format.data_format_version -%}
+              <formatVersion>{{ format.data_format_version }}</formatVersion>
+              {%- endif %}
+            </externallyDefinedFormat>
+          </dataFormat>
+          <distribution>
+            <online>
+              <url function="download">{{ format.download_url }}</url>
+            </online>
+          </distribution>
+        </physical>
+        {% endfor -%}
+        {% for collection in collections -%}
+        <collection>
+          {% if collection.parent_collection_identifier -%}
+          <parentCollectionIdentifier>{{ collection.parent_collection_identifier }}</parentCollectionIdentifier>
+          {%- endif %}
+          {% if collection.collection_identifier -%}
+          <collectionIdentifier>{{ collection.collection_identifier }}</collectionIdentifier>
+          {%- endif %}
+          <collectionName>{{ collection.collection_name }}</collectionName>
+        </collection>
+        {% endfor -%}
+        {% for period in temporaral_coverage_formation_period -%}
+          <formationPeriod>{{ period }}</formationPeriod>
+        {% endfor -%}
+        {% for method in specimen_preservation_methods -%}
+          <specimenPreservationMethod>{{ method.method }}</specimenPreservationMethod>
+        {% endfor -%}
+        {% for period in temporaral_coverage_living_time_period -%}
+          <livingTimePeriod>{{ period }}</livingTimePeriod>
+        {% endfor -%}
+        {% if resource_logo_url -%}
+          <resourceLogoUrl>http://ibif.gov.in:8080/ipt/logo.do?r=wii1</resourceLogoUrl>
+        {% endif -%}
+        {% for unit in curatorial_units_count_with_uncertainty -%}
+        <jgtiCuratorialUnit>
+          {% if unit.unit_type -%}
+          <jgtiUnitType>{{ unit.unit_type }}</jgtiUnitType>
+          {%- endif %}
+          <jgtiUnits {% if unit.plus_minus %}uncertaintyMeasure="{{ unit.plus_minus }}"{% endif %}>{{ unit.count }}</jgtiUnits>
+        </jgtiCuratorialUnit>
+        {% endfor -%}
+        {% for unit in curatorial_units_count_range -%}
+        <jgtiCuratorialUnit>
+          {% if unit.unit_type -%}
+          <jgtiUnitType>{{ unit.unit_type }}</jgtiUnitType>
+          {%- endif %}
+          <jgtiUnitRange>
+            <beginRange>{{ unit.count_low }}</beginRange>
+            <endRange>{{ unit.count_high }}</endRange>
+          </jgtiUnitRange>
+        </jgtiCuratorialUnit>
+        {% endfor -%}
       </gbif>
     </metadata>
   </additionalMetadata>
