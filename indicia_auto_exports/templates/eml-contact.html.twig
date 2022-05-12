@@ -32,3 +32,6 @@
 {% if contact.user_directory and contact.user_id %}
   <userId directory="{{ contact.user_directory }}">{{ contact.user_id }}</userId>
 {% endif %}
+{% if contact.role -%}
+  <role>{{ contact.role }}</role>
+{% endif -%}
