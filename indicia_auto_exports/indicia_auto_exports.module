@@ -97,3 +97,28 @@ function indicia_auto_exports_theme($existing, $type, $theme, $path) {
     ],
   ];
 }
+
+/**
+ * Implements webform_options_alter().
+ *
+ * Alters the options for the groups to those the user is admin for.
+ */
+function indicia_auto_exports_webform_options_alter(array &$options, array &$element, $options_id = NULL) {
+  if ($element['#title'] === 'Group') {
+    iform_load_helpers(['report_helper']);
+    $conn = iform_get_connection_details();
+    $readAuth = \report_helper::get_read_auth($conn['website_id'], $conn['password']);
+    $groups = \report_helper::get_report_data([
+      'dataSource' => 'library/groups/groups_list',
+      'readAuth' => $readAuth,
+      'extraParams' => [
+        'currentUser' => hostsite_get_user_field('indicia_user_id'),
+        'userFilterMode' => 'admin',
+      ],
+    ]);
+    $options = [];
+    foreach ($groups as $group) {
+      $options[$group['id']] = $group['title'];
+    }
+  }
+}
