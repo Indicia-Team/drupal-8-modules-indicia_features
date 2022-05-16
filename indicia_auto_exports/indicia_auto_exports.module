@@ -58,32 +58,6 @@ function indicia_auto_exports_cron() {
   }
 }
 
-/**
- * Implements hook_form_alter().
- *
- * Alters the options for the groups to those the user is admin for.
- */
-function indicia_auto_exports_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  if ($form_id === 'webform_submission_published_group_metadata_add_form' || $form_id === 'webform_submission_published_group_metadata_edit_form') {
-    iform_load_helpers(['report_helper']);
-    $conn = iform_get_connection_details();
-    $readAuth = \report_helper::get_read_auth($conn['website_id'], $conn['password']);
-    $groups = \report_helper::get_report_data([
-      'dataSource' => 'library/groups/groups_list',
-      'readAuth' => $readAuth,
-      'extraParams' => [
-        'currentUser' => hostsite_get_user_field('indicia_user_id'),
-        'userFilterMode' => 'admin',
-      ],
-    ]);
-    $options = [];
-    foreach ($groups as $group) {
-      $options[$group['id']] = $group['title'];
-    }
-    $form['elements']['export_settings']['group']['#options'] = $options;
-  }
-}
-
 function indicia_auto_exports_theme($existing, $type, $theme, $path) {
   return [
     'meta' => [
