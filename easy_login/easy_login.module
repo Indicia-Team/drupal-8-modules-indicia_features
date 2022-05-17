@@ -221,7 +221,7 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
 function easy_login_synchronise_account_to_warehouse($account, $needToProcessExistingRecords) {
   $existingUser = \Drupal\user\Entity\User::load($account->uid->value);
   $fieldsToSyncByCaption = [];
-  $fieldsToSync = array();
+  $fieldsToSync = [];
   foreach ($account as $field => $def) {
     if (preg_match('/^field_indicia_/', $field) && $field !== 'field_indicia_user_id') {
       if (!empty($def->value)) {
@@ -249,24 +249,28 @@ function easy_login_synchronise_account_to_warehouse($account, $needToProcessExi
     }
   }
   if ($account->uid->value === $existingUser->uid->value) {
-    // If the user has not filled in preferences then prompt them. Allow for the fact that the site administrator might have
-    // hidden these fields if they feel they are not relevant to the site.
-    $requests = array();
-    // $account->field_taxon_groups->value etc contains something if the field exist
-    if (isset($account->field_location) && empty($account->field_location->value))
+    // If the user has not filled in preferences then prompt them. Allow for
+    // the fact that the site administrator might have hidden these fields if
+    // they feel they are not relevant to the site.
+    $requests = [];
+    // $account->field_taxon_groups->value etc contains something if the field
+    // exist.
+    if (isset($account->field_location) && empty($account->field_location->value)) {
       $requests[] = t('the area you would most often like to record in');
-    if (isset($account->field_taxon_groups) && empty($account->field_taxon_groups->value))
+    }
+    if (isset($account->field_taxon_groups) && empty($account->field_taxon_groups->value)) {
       $requests[] = t('the list of species groups you are particularly interested in');
+    }
     if (!empty($requests)) {
       global $base_url;
-      \Drupal::messenger()->addMessage(t('Why not tell us '.implode(' '.t('and').' ', $requests).' to help us tailor the system to your needs? '.
-          'You can fill this information in on your '.'<a href="'.$base_url.'/'.'user/'.$account->uid->value.'/edit'.'">user preferences</a>'.'.'
+      \Drupal::messenger()->addMessage(t('Why not tell us '.implode(' ' . t('and') . ' ', $requests) . ' to help us tailor the system to your needs? ' .
+          'You can fill this information in on your '.'<a href="' . $base_url . '/'.'user/' . $account->uid->value . '/edit'.'">user preferences</a>' . '.'
       ));
     }
   }
   easy_login_move_form_data_into_account($account);
-  $response=easy_login_call_get_user_id($account, null, null, $fieldsToSyncByCaption, $needToProcessExistingRecords);
-  easy_login_handle_get_user_id_response($account, $response,false);
+  $response = easy_login_call_get_user_id($account, NULL, NULL, $fieldsToSyncByCaption, $needToProcessExistingRecords);
+  easy_login_handle_get_user_id_response($account, $response, FALSE);
 }
 
 function build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync) {
@@ -280,13 +284,18 @@ function build_fields_to_sync_by_caption_array($database, $account, $fieldName, 
 }
 
 /**
- * Overwrites the content of the account object with any updates from the posted form. Does not save to the db.
- * @param array $account User account
+ * Copied form data into the account.
+ *
+ * Overwrites the content of the account object with any updates from the
+ * posted form. Does not save to the db.
+ *
+ * @param array $account
+ *   User account
  */
 function easy_login_move_form_data_into_account($account) {
   foreach ($account as $key=>$data) {
-    if (substr($key, 0, 6)==='field_') {
-      $account->$key=$data;
+    if (substr($key, 0, 6) === 'field_') {
+      $account->$key = $data;
     }
   }
 }
