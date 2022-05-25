@@ -12,6 +12,10 @@ function indicia_notification_emails_form_user_form_alter(&$form, FormStateInter
   iform_load_helpers(['data_entry_helper']);
   // Get the warehouse user id for the user whose profile is being viewed.
   $account = $form_state->getFormObject()->getEntity();
+  if (!$account->id()) {
+    // Nothing to do if user not created yet.
+    return;
+  }
   $userId = hostsite_get_user_field('indicia_user_id', FALSE, FALSE, $account->id());
   if (!$userId) {
     // Nothing to do if not linked to the warehouse.
