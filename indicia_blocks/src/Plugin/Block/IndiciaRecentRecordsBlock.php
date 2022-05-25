@@ -126,6 +126,9 @@ JS;
     $form['report_parameters'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Report parameters'),
+      '#description' => 'Parameters in the form key=value, one per line. The list of available parameters is described in ' .
+        '<a href="https://indicia-docs.readthedocs.io/en/latest/developing/reporting/occurrence-standard-parameters.html" target="_blank">' .
+        'the occurrence report standard parameters documentation</a>.',
       '#default_value' => $this->configuration['report_parameters'],
       '#weight' => '0',
     ];
