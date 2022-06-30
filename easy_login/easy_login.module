@@ -30,6 +30,11 @@ function easy_login_user_login(UserInterface $account) {
   }
 }
 
+/**
+ * Implements hook_user_presave.
+ *
+ * @param EntityInterface $account User account
+ */
 function easy_login_user_presave(EntityInterface $account) {
   if ($account->isActive() && $account->id() && empty($account->field_indicia_user_id->value)) {
     $response = easy_login_call_get_user_id($account);
@@ -51,24 +56,41 @@ function easy_login_form_user_form_alter(&$form, FormStateInterface $form_state,
 }
 
 /**
- * Implements hook_user_insert. Synchronises user fields to matching custom attributes on the
+ * Implements hook_user_insert.
+ *
+ * Synchronises user fields to matching custom attributes on the
  * Indicia warehouse, if the user is created as active.
  * @param array $account User account
  */
 function easy_login_user_insert($account) {
   if ($account->status->value) {
-    easy_login_synchronise_account_to_warehouse($account, false);
+    easy_login_synchronise_account_to_warehouse($account, FALSE);
   }
 }
 
 /**
- * Implements hook_user_update. Synchronises user fields to matching custom attributes on the
- * Indicia warehouse.
- * @param array $account User account
- * @param $category
+ * Implements hook_user_update.
+ *
+ * Synchronises user fields to matching custom attributes on
+ * the Indicia warehouse.
+ * @param UserInterface $account
+ *   User account.
  */
-function easy_login_user_update($account) {
-  easy_login_synchronise_account_to_warehouse($account, false);
+function easy_login_user_update(UserInterface $account) {
+  easy_login_synchronise_account_to_warehouse($account, FALSE);
+}
+
+/**
+ * Implements hook_user_delete.
+ * 
+ * If user deletes account, fire code to anonymise the user as applicable.
+ * @param object $account
+ *   User account.
+ */
+function easy_login_user_delete($account) {
+  clear_indicia_fields_synced_to_warehouse($account);
+  easy_login_synchronise_account_to_warehouse($account, FALSE);
+  call_warehouse_user_delete($account);
 }
 
 /**
@@ -91,7 +113,7 @@ function easy_login_allowed_taxon_groups() {
     ]);
     $groups = [];
     foreach ($response as $group) {
-      $groups[$group['id']]=$group['title'];
+      $groups[$group['id']] = $group['title'];
     }
     return $groups;
   }
@@ -185,10 +207,10 @@ function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = 
  * Handle the response from a call to get_user_id on the warehouse services.
  *
  * @param object $account
- *   User object to save to
+ *   User object to save to.
  * @param string $response
  *   Response from call to get_user_id (should be a json string).
- * @param boolean $save
+ * @param bool $save
  *   Should the updated account be saved?
  */
 function easy_login_handle_get_user_id_response($account, $response, $save) {
@@ -204,8 +226,9 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
         \Drupal::messenger()->addMessage(t('Your user account link to the central records database has been updated.'));
       }
       $account->field_indicia_user_id->setValue($response->userId);
-      if ($save)
+      if ($save) {
         $account->save();
+      }
     }
   }
   elseif (isset($response->possibleMatches)) {
@@ -290,12 +313,56 @@ function build_fields_to_sync_by_caption_array($database, $account, $fieldName, 
  * posted form. Does not save to the db.
  *
  * @param array $account
- *   User account
+ *   User account.
  */
 function easy_login_move_form_data_into_account($account) {
-  foreach ($account as $key=>$data) {
+  foreach ($account as $key => $data) {
     if (substr($key, 0, 6) === 'field_') {
       $account->$key = $data;
     }
+  }
+}
+
+/**
+ * Inform the Warehouse that the user deletion function need to be run.
+ *
+ * @param object $account
+ *   User account.
+ *
+ * @return string
+ *   The response output.
+ */
+function call_warehouse_user_delete($account) {
+  iform_load_helpers(['data_entry_helper']);
+  if (!empty($account->field_indicia_user_id->value)) {
+    $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/delete_user';
+    $config = \Drupal::config('iform.settings');
+    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+    $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' . $auth['write_tokens']['auth_token'];
+    $postargs = 'warehouse_user_id=' . $account->field_indicia_user_id->value;
+    $postargs .= '&website_id_for_user_deletion=' . $config->get('website_id');
+    $response = data_entry_helper::http_post($url, $postargs);
+    return $response['output'];
+  }
+}
+
+/**
+ * Clear Warehouse synced field when account deleted.
+ *
+ * @param object $account
+ *   User account.
+ */
+function clear_indicia_fields_synced_to_warehouse($account) {
+  iform_load_helpers(['data_entry_helper']);
+  if (!empty($account->field_indicia_user_id->value)) {
+    $config = \Drupal::config('iform.settings');
+    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+    foreach ($account as $fieldName => &$def) {
+      // Need to check for field_indicia as we only want to clear synced fields.
+      if (strpos($fieldName, 'field_indicia') !== FALSE && isset($def) && $fieldName !== 'field_indicia_user_id') {
+        $def->value = '';
+      }
+    }
+    return $account;
   }
 }
