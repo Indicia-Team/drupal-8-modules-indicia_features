@@ -163,10 +163,6 @@ function easy_login_allowed_locations() {
  */
 function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = NULL, $fieldsToSyncByCaption = []) {
   if (empty($account->field_last_name->value)) {
-    \Drupal::messenger()->addMessage(t('Please set at least your last name on your @account. ' .
-       'This will allow your user registration to be linked properly to the central database of records.',
-        array('@account' => Link::fromTextAndUrl('user account', $account->toUrl('edit-form'))->toString())
-    ));
     return;
   }
   iform_load_helpers(['data_entry_helper']);
