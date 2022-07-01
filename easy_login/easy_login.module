@@ -232,7 +232,6 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
 }
 
 function easy_login_synchronise_account_to_warehouse($account) {
-  $existingUser = \Drupal\user\Entity\User::load($account->uid->value);
   $fieldsToSyncByCaption = [];
   $fieldsToSync = [];
   foreach ($account as $field => $def) {
@@ -243,10 +242,6 @@ function easy_login_synchronise_account_to_warehouse($account) {
       else {
         $value = '';
       }
-      // Fields that are available for synchronisation must be called
-      // field_indicia_*. We also don't want to handle anything that has not
-      // actually changed.
-      $userField = $existingUser->$field->value;
       // Note: there used to be an if statement around this field to make sure it was previously empty or had changed before doing a sync.
       // This does not work in the situation where a user registers and is then activated, as the first sync should occur at activation
       // when actually a field might of been filled at registration and won't have changed.
@@ -261,10 +256,10 @@ function easy_login_synchronise_account_to_warehouse($account) {
       $fieldsToSyncByCaption = build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync);
     }
   }
-  if ($account->uid->value === $existingUser->uid->value) {
-    // If the user has not filled in preferences then prompt them. Allow for
-    // the fact that the site administrator might have hidden these fields if
-    // they feel they are not relevant to the site.
+  if ($account->uid->value === \Drupal::currentUser()->id()) {
+    // If doing the current user and the user has not filled in preferences
+    // then prompt them. Allow for the fact that the site administrator might
+    // have hidden these fields if they feel they are not relevant to the site.
     $requests = [];
     // $account->field_taxon_groups->value etc contains something if the field
     // exist.
