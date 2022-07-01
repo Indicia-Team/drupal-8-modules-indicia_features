@@ -26,6 +26,11 @@ function easy_login_user_login(UserInterface $account) {
   }
 }
 
+/**
+ * Implements hook_user_presave.
+ *
+ * @param EntityInterface $account User account
+ */
 function easy_login_user_presave(EntityInterface $account) {
   if ($account->isActive() && $account->id() && empty($account->field_indicia_user_id->value)) {
     $response = easy_login_call_get_user_id($account);
@@ -44,6 +49,44 @@ function easy_login_form_user_form_alter(&$form, FormStateInterface $form_state,
     unset($form['field_location']);
   }
   $form['#attached']['library'][] = 'easy_login/user-form';
+}
+
+/**
+ * Implements hook_user_insert.
+ *
+ * Synchronises user fields to matching custom attributes on the
+ * Indicia warehouse, if the user is created as active.
+ * @param array $account User account
+ */
+function easy_login_user_insert($account) {
+  if ($account->status->value) {
+    easy_login_synchronise_account_to_warehouse($account, FALSE);
+  }
+}
+
+/**
+ * Implements hook_user_update.
+ *
+ * Synchronises user fields to matching custom attributes on
+ * the Indicia warehouse.
+ * @param UserInterface $account
+ *   User account.
+ */
+function easy_login_user_update(UserInterface $account) {
+  easy_login_synchronise_account_to_warehouse($account, FALSE);
+}
+
+/**
+ * Implements hook_user_delete.
+ *
+ * If user deletes account, fire code to anonymise the user as applicable.
+ * @param object $account
+ *   User account.
+ */
+function easy_login_user_delete($account) {
+  clear_indicia_fields_synced_to_warehouse($account);
+  easy_login_synchronise_account_to_warehouse($account, FALSE);
+  call_warehouse_user_delete($account);
 }
 
 /**
@@ -66,7 +109,7 @@ function easy_login_allowed_taxon_groups() {
     ]);
     $groups = [];
     foreach ($response as $group) {
-      $groups[$group['id']]=$group['title'];
+      $groups[$group['id']] = $group['title'];
     }
     return $groups;
   }
@@ -108,7 +151,7 @@ function easy_login_allowed_locations() {
  * Function to call the get_user_id service on the warehouse.
  *
  * @param object $account
- *   User account object
+ *   User account object.
  * @param string $force
  *   Set to merge (to force a merge operation) or split (to force no merge).
  * @param array $users_to_merge
@@ -119,6 +162,9 @@ function easy_login_allowed_locations() {
  *   Response from call to get_user_id.
  */
 function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = NULL, $fieldsToSyncByCaption = []) {
+  if (empty($account->field_last_name->value)) {
+    return;
+  }
   iform_load_helpers(['data_entry_helper']);
   $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
   $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
@@ -151,10 +197,10 @@ function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = 
  * Handle the response from a call to get_user_id on the warehouse services.
  *
  * @param object $account
- *   User object to save to
+ *   User object to save to.
  * @param string $response
  *   Response from call to get_user_id (should be a json string).
- * @param boolean $save
+ * @param bool $save
  *   Should the updated account be saved?
  */
 function easy_login_handle_get_user_id_response($account, $response, $save) {
@@ -170,8 +216,9 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
         \Drupal::messenger()->addMessage(t('Your user account link to the central records database has been updated.'));
       }
       $account->field_indicia_user_id->setValue($response->userId);
-      if ($save)
+      if ($save) {
         $account->save();
+      }
     }
   }
   elseif (isset($response->possibleMatches)) {
@@ -185,47 +232,127 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
 }
 
 function easy_login_synchronise_account_to_warehouse($account) {
+  $existingUser = \Drupal\user\Entity\User::load($account->uid->value);
   $fieldsToSyncByCaption = [];
-  $account = \Drupal\user\Entity\User::load($account->uid->value);
+  $fieldsToSync = [];
   foreach ($account as $field => $def) {
-    // @todo The following should only pick up field values that have actually changed.
-    if (preg_match('/^field_indicia_/', $field) && $field!=='field_indicia_user_id') {
-      $value = empty($def->value) ? $def->value : $def;
-      $fieldsToSyncByCaption[$def->label] = $value;
-    }
-    /*
-      // fields that are available for synchronisation must be called field_indicia_*. We
-      // also don't want to handle anything that has not actually changed.
-      $userField = $existingUser->$field;
-      //Check for empty as fields that have not been synced before will have empty $userField
-      if (empty($userField[LANGUAGE_NONE][0]['value']) || ($value !== $userField[LANGUAGE_NONE][0]['value'])) {
-        $fieldsToSync[$field] = $value;
+    if (preg_match('/^field_indicia_/', $field) && $field !== 'field_indicia_user_id') {
+      if (!empty($def->value)) {
+        $value = $def->value;
       }
-    }*/
-  }
-/*
-
-    if ($account->uid===$user->uid) {
-      // If the user has not filled in preferences then prompt them. Allow for the fact that the site administrator might have
-      // hidden these fields if they feel they are not relevant to the site.
-      $requests = [];
-      // $account->field_taxon_groups etc contains something if the field exist
-      if (isset($account->field_location) && empty($edit['field_location'][LANGUAGE_NONE]))
-        $requests[] = t('the area you would most often like to record in');
-      if (isset($account->field_taxon_groups) && empty($edit['field_taxon_groups'][LANGUAGE_NONE]))
-        $requests[] = t('the list of species groups you are particularly interested in');
-      if (!empty($requests))
-        drupal_set_message(t('Why not tell us @requests to help us tailor the system to your needs? '.
-          'You can fill this information in on your @link.',
-          array(
-            '@requests'=>implode(' '.t('and').' ', $requests),
-            '@link'=>l('user preferences', 'user/'.$account->uid.'/edit')
-          )
-        ));
+      else {
+        $value = '';
+      }
+      // Fields that are available for synchronisation must be called
+      // field_indicia_*. We also don't want to handle anything that has not
+      // actually changed.
+      $userField = $existingUser->$field->value;
+      // Note: there used to be an if statement around this field to make sure it was previously empty or had changed before doing a sync.
+      // This does not work in the situation where a user registers and is then activated, as the first sync should occur at activation
+      // when actually a field might of been filled at registration and won't have changed.
+      $fieldsToSync[$field] = $value;
     }
   }
-  easy_login_move_form_data_into_account($edit, $account);
-  $response=easy_login_call_get_user_id($account, NULL, NULL, $fieldsToSyncByCaption);
-  easy_login_handle_get_user_id_response($account, $response);
-*/
+  if (count($fieldsToSync)) {
+    // Indicia requires fields to match on the caption, so we need to query
+    // the captions and convert the array.
+    $database = \Drupal::database();
+    foreach ($fieldsToSync as $fieldName => $newValue) {
+      $fieldsToSyncByCaption = build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync);
+    }
+  }
+  if ($account->uid->value === $existingUser->uid->value) {
+    // If the user has not filled in preferences then prompt them. Allow for
+    // the fact that the site administrator might have hidden these fields if
+    // they feel they are not relevant to the site.
+    $requests = [];
+    // $account->field_taxon_groups->value etc contains something if the field
+    // exist.
+    if (isset($account->field_location) && empty($account->field_location->value)) {
+      $requests[] = t('the area you would most often like to record in');
+    }
+    if (isset($account->field_taxon_groups) && empty($account->field_taxon_groups->value)) {
+      $requests[] = t('the list of species groups you are particularly interested in');
+    }
+    if (!empty($requests)) {
+      global $base_url;
+      \Drupal::messenger()->addMessage(t('Why not tell us '.implode(' ' . t('and') . ' ', $requests) . ' to help us tailor the system to your needs? ' .
+          'You can fill this information in on your '.'<a href="' . $base_url . '/'.'user/' . $account->uid->value . '/edit'.'">user preferences</a>' . '.'
+      ));
+    }
+  }
+  easy_login_move_form_data_into_account($account);
+  $response = easy_login_call_get_user_id($account, NULL, NULL, $fieldsToSyncByCaption);
+  easy_login_handle_get_user_id_response($account, $response, FALSE);
+}
+
+function build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync) {
+  $query = $database->query("select ".$fieldName.'_value'." from ".'user__'.$fieldName."");
+  $r = $query->fetchAll();
+  $fieldConfig = $account->get($fieldName)->getFieldDefinition()->getConfig('the_bundle');
+  $label = $fieldConfig->getLabel();
+  // Create an array of values to sync using the caption as array key instead of the field name
+  $fieldsToSyncByCaption[$label] = $fieldsToSync[$fieldName];
+  return $fieldsToSyncByCaption;
+}
+
+/**
+ * Copied form data into the account.
+ *
+ * Overwrites the content of the account object with any updates from the
+ * posted form. Does not save to the db.
+ *
+ * @param array $account
+ *   User account.
+ */
+function easy_login_move_form_data_into_account($account) {
+  foreach ($account as $key => $data) {
+    if (substr($key, 0, 6) === 'field_') {
+      $account->$key = $data;
+    }
+  }
+}
+
+/**
+ * Inform the Warehouse that the user deletion function need to be run.
+ *
+ * @param object $account
+ *   User account.
+ *
+ * @return string
+ *   The response output.
+ */
+function call_warehouse_user_delete($account) {
+  iform_load_helpers(['data_entry_helper']);
+  if (!empty($account->field_indicia_user_id->value)) {
+    $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/delete_user';
+    $config = \Drupal::config('iform.settings');
+    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+    $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' . $auth['write_tokens']['auth_token'];
+    $postargs = 'warehouse_user_id=' . $account->field_indicia_user_id->value;
+    $postargs .= '&website_id_for_user_deletion=' . $config->get('website_id');
+    $response = data_entry_helper::http_post($url, $postargs);
+    return $response['output'];
+  }
+}
+
+/**
+ * Clear Warehouse synced field when account deleted.
+ *
+ * @param object $account
+ *   User account.
+ */
+function clear_indicia_fields_synced_to_warehouse($account) {
+  iform_load_helpers(['data_entry_helper']);
+  if (!empty($account->field_indicia_user_id->value)) {
+    $config = \Drupal::config('iform.settings');
+    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+    foreach ($account as $fieldName => &$def) {
+      // Need to check for field_indicia as we only want to clear synced fields.
+      if (strpos($fieldName, 'field_indicia') !== FALSE && isset($def) && $fieldName !== 'field_indicia_user_id') {
+        $def->value = '';
+      }
+    }
+    return $account;
+  }
 }
