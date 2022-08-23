@@ -1,0 +1,127 @@
+<?php
+
+function recording_system_links_schema() {
+  $schema['recording_system_config'] = [
+    'description' => 'List of configuration data for recording systems that are available to link to.',
+    'fields' => [
+      'id' => [
+        'description' => 'The primary identifier for the table.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'no export' => TRUE,
+      ],
+      'title' => [
+        'description' => 'Human readable title of the recording system.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ],
+      'machine_name' => [
+        'description' => 'Machine name of the recording system.',
+        'type' => 'varchar',
+        'length' => DRUPAL_EXTENSION_NAME_MAX_LENGTH,
+        'not null' => TRUE,
+      ],
+      'description' => [
+        'description' => 'Description of the recording system link.',
+        'type' => 'text',
+      ],
+      'oauth2_url' => [
+        'description' => 'Base URL of the oAuth2 server.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+      'client_id' => [
+        'description' => 'Client ID used to access the oAuth2 server.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+      'api_provider' => [
+        'description' => 'API provider to use (defines the code to use when posting occurrences etc).',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ],
+      'created_by' => [
+        'description' => 'User id that created the link.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'created' => [
+        'description' => 'The Unix timestamp when the link was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ],
+      'changed' => [
+        'description' => 'The Unix timestamp when the link was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ],
+      'changed_by' => [
+        'description' => 'User id that changed the link.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => [
+      'id',
+    ],
+    'unique keys' => [
+      'unique_title' => ['title'],
+      'unique_machine_name' => ['machine_name'],
+    ],
+  ];
+  $schema['recording_system_oauth_tokens'] = [
+    'description' => 'Stores oAuth2 tokens for other recording systems that a user has authenticated against.',
+    'fields' => [
+      'uid' => [
+        'description' => 'Uid for user who authenticated against another recording system.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'recording_system_config_id' => [
+        'description' => 'ID of the recording system config the tokens are for.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'access_token' => [
+        'description' => 'oAuth2 access token, granted when a user authenticates.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+      'refresh_token' => [
+        'description' => 'Refresh token used to obtain a new access token when the access token expires.',
+        'type' => 'text',
+        'default' => NULL,
+      ],
+      'changed' => array(
+        'description' => 'The Unix timestamp when the tokens record was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ),
+    ],
+    'primary key' => [
+      'uid',
+      'recording_system_config_id',
+    ],
+    'foreign keys' => [
+      'recording_system_config' => [
+        'table' => 'recording_system_config',
+        'columns' => ['recording_system_config_id' => 'id'],
+      ],
+    ],
+  ];
+  return $schema;
+}
