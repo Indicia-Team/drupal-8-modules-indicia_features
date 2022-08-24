@@ -11,7 +11,7 @@ recording_system_links.configure_link:
   requirements:
     _permission: 'admin recording system links'
 recording_system_links.connect:
-  path: '/recording-system-links/connect'
+  path: '/recording-system-links/{machineName}/connect'
   defaults:
     _controller: '\Drupal\recording_system_links\Controller\RecordingSystemLinksController::connect'
     _title: 'Connect recording system'
@@ -19,7 +19,7 @@ recording_system_links.connect:
     _permission: 'connect recording system links'
     _role: 'authenticated'
 recording_system_links.oauth2-callback:
-  path: '/recording-system-links/{system}/oauth2-callback'
+  path: '/recording-system-links/{machineName}/oauth2-callback'
   defaults:
     _controller: '\Drupal\recording_system_links\Controller\RecordingSystemLinksController::oauth2Callback'
     _title: 'Redirect from oAuth login to receive token'

@@ -5,7 +5,6 @@ namespace Drupal\recording_system_links\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\user\Entity\User;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -29,7 +28,7 @@ class LinkSettingsForm extends FormBase {
     if ($existing) {
       // Editing an existing link.
       $link = \Drupal::database()->select('recording_system_config')
-        ->fields('recording_system_config',   [
+        ->fields('recording_system_config', [
           'title',
           'machine_name',
           'description',
@@ -72,11 +71,20 @@ class LinkSettingsForm extends FormBase {
       '#required' => TRUE,
     ];
     $form['machine_name'] = [
-      '#type' => 'textfield',
+      '#type' => 'machine_name',
       '#title' => $this->t('Machine name'),
       '#default_value' => $link['machine_name'],
-      '#description' => $this->t('Machine name for this link. Lowercase, alphabetic, numeric and hyphens only.'),
+      '#description' => $this->t('Machine name for this link. It must only contain lowercase letters, numbers, and underscores.'),
       '#required' => TRUE,
+      '#machine_name' => [
+        'exists' => [
+          'Drupal\recording_system_links\Utils\RecordingSystemLinkUtils',
+          'getLinkFromMachineName',
+        ],
+        'source' => [
+          'title',
+        ],
+      ],
     ];
     $form['description'] = [
       '#type' => 'textarea',
@@ -85,7 +93,7 @@ class LinkSettingsForm extends FormBase {
       '#default_value' => $link['description'],
     ];
     $form['oauth2_url'] = [
-      '#type' => 'textfield',
+      '#type' => 'url',
       '#title' => $this->t('oAuth2 URL'),
       '#default_value' => $link['oauth2_url'],
       '#description' => $this->t('Root URL of the oAuth2 service, e.g. "token/" will be appended to create the URL to fetch the token.'),
@@ -125,6 +133,27 @@ class LinkSettingsForm extends FormBase {
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $formValues = $form_state->getValues();
+    // Check title unique.
+    $query = \Drupal::database()->select('recording_system_config')
+      ->fields('recording_system_config', ['id'])
+      ->condition('title', $formValues['title']);
+    if (!empty($formValues['id'])) {
+      $query->condition('id', $formValues['id'], '<>');
+    }
+    $existing = $query->execute()->fetchAssoc();
+    if (!empty($existing)) {
+      $form_state->setErrorByName(
+        'title',
+        $this->t('This title is already used for an existing link. Please specify a unique title.')
+      );
+    }
+  }
+
+  /**
    * Submit handler to save an key.
    *
    * Implements hook_submit() to submit a form produced by
@@ -132,7 +161,6 @@ class LinkSettingsForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $formValues = $form_state->getValues();
-    // @todo validate
     $values = [
       'title' => $formValues['title'],
       'machine_name' => $formValues['machine_name'],
@@ -142,10 +170,9 @@ class LinkSettingsForm extends FormBase {
       'api_provider' => $formValues['api_provider'],
       'changed' => time(),
       'changed_by' => time(),
-
     ];
     $userId = \Drupal::currentUser()->id();
-    // Save the link.
+    // Save the link with appropriate metadata.
     if (empty($formValues['id'])) {
       $values['created'] = time();
       $values['created_by'] = $userId;

@@ -20,7 +20,7 @@ function recording_system_links_schema() {
       'machine_name' => [
         'description' => 'Machine name of the recording system.',
         'type' => 'varchar',
-        'length' => DRUPAL_EXTENSION_NAME_MAX_LENGTH,
+        'length' => 64,
         'not null' => TRUE,
       ],
       'description' => [

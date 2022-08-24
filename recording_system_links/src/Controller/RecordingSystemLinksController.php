@@ -6,7 +6,9 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
-use Drupal\user\Entity\User;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\recording_system_links\Utils\RecordingSystemLinkUtils;
 
 class RecordingSystemLinksController extends ControllerBase {
 
@@ -25,6 +27,7 @@ class RecordingSystemLinksController extends ControllerBase {
     $rows = [];
     foreach ($links as $link) {
       $editLinkUrl = Url::fromRoute('recording_system_links.configure_link', ['id' => $link->id]);
+      $editLinkUrl->setOptions(['attributes' => ['class' => ['button']]]);
       $rows[] = [
         $link->title,
         $link->description,
@@ -38,22 +41,36 @@ class RecordingSystemLinksController extends ControllerBase {
     ];
 
     $url = Url::fromRoute('recording_system_links.configure_link');
-    $linkOptions = [
-      'attributes' => [
-        'class' => ['button'],
-      ],
-    ];
-    $url->setOptions($linkOptions);
+    $url->setOptions(['attributes' => ['class' => ['button']]]);
     $render['add_button'] = [Link::fromTextAndUrl($this->t('Add new link'), $url)->toRenderable()];
 
     return $render;
   }
 
-  public function connect() {
-    // @todo Client ID from config for the connection.
-    $clientId = 'yq4XnkA5IAR6UbnQMIq7SsjWEwarCSttjBQklmTq';
-    $url = Url::fromRoute('recording-system-links.oauth2-callback', [], ['absolute' => TRUE])->toString(TRUE);
-    $response = new TrustedRedirectResponse('https://observation-test.org/api/v1/oauth2/authorize/?response_type=code&client_id=' . $clientId . '&redirect_uri=' . $url->getGeneratedUrl());
+  /**
+   * Controller action to connect a user account to a recording system.
+   *
+   * Redirects to the remote systems authorization page via oAuth2.
+   *
+   * @param string $machineName
+   *   Unique identifier for the system being connected to.
+   *
+   * @return Drupal\Core\Routing\TrustedRedirectResponse
+   *   Redirection to remote system.
+   */
+  public function connect($machineName) {
+    $link = RecordingSystemLinkUtils::getLinkFromMachineName($machineName);
+    if (empty($link)) {
+      throw new NotFoundHttpException();
+    }
+    // Get a trusted response, convoluted way of getting URL to avoid
+    // cacheability metadata error.
+    $url = Url::fromRoute('recording_system_links.oauth2-callback', ['machineName' => $machineName], ['absolute' => TRUE])->toString(TRUE);
+
+    // Only necessary until redirect_uri corrected on obs.org.
+    $url = Url::fromRoute('recording_system_links.oauth2-callback-foo', [], ['absolute' => TRUE])->toString(TRUE);
+
+    $response = new TrustedRedirectResponse('https://observation-test.org/api/v1/oauth2/authorize/?response_type=code&client_id=' . $link->client_id . '&redirect_uri=' . $url->getGeneratedUrl());
     $response->addCacheableDependency($url);
     return $response;
   }
@@ -64,14 +81,17 @@ class RecordingSystemLinksController extends ControllerBase {
    * Uses the provided token to obtain an access token to store for the current
    * user.
    *
-   * @param string $system
+   * @param string $machineName
    *   Name of the system being redirected from.
+   *
+   * @todo Remove default param when redirect corrected.
    */
-  public function oauth2Callback($system = 'observation_org') {
-    // @todo Obtain client ID from system config.
-    $clientId = 'yq4XnkA5IAR6UbnQMIq7SsjWEwarCSttjBQklmTq';
-    // @todo Obtain token URL from system config.
-    $tokenUrl = 'https://observation-test.org/api/v1/oauth2/token/';
+  public function oauth2Callback($machineName = 'observation_org') {
+    $link = RecordingSystemLinkUtils::getLinkFromMachineName($machineName);
+    if (empty($link)) {
+      throw new NotFoundHttpException();
+    }
+    $tokenUrl = "{$link->oauth2_url}token/";
 
     $session = curl_init();
     // Set the POST options.
@@ -79,31 +99,53 @@ class RecordingSystemLinksController extends ControllerBase {
     curl_setopt($session, CURLOPT_HEADER, TRUE);
     curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($session, CURLOPT_POST, 1);
-    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$clientId&grant_type=authorization_code&code=$_GET[code]");
+    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$link->client_id&grant_type=authorization_code&code=$_GET[code]");
     $rawResponse = curl_exec($session);
-    $parts = explode("\r\n\r\n", $rawResponse);
-    $responseBody = array_pop($parts);
-    // @todo Error handling.
-    $authObj = json_decode($responseBody);
-    // Store the access token and refresh token in the
-    // recording_system_oauth_tokens table.
-    $userId = \Drupal::currentUser()->id();
-    $database = \Drupal::database();
-    $database
-      ->insert('recording_system_oauth_tokens')
-      ->fields([
-        'uid',
-        'recording_system',
-        'access_token',
-        'refresh_token',
-      ])
-      ->values([
-        $userId,
-        $system,
-        $authObj->access_token,
-        $authObj->refresh_token,
-      ])
-      ->execute();
+    $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
+    $curlErrno = curl_errno($session);
+    if ($curlErrno || $httpCode !== 200) {
+      $errorInfo = ['Request failed when exchanging code for a token.'];
+      $errorInfo[] = "URL: $tokenUrl.";
+      $errorInfo[] = "POST data: client_id={client_id}&grant_type=authorization_code&code={code}.";
+      if ($curlErrno) {
+        $errorInfo[] = 'cUrl error: ' . $curlErrno . ': ' . curl_error($session);
+      }
+      if ($httpCode !== 200) {
+        $errorInfo[] = "HTTP status $httpCode.";
+      }
+      $errorInfo[] = $rawResponse;
+      \Drupal::logger('recording_system_links')->error(implode(' ', $errorInfo));
+      \Drupal::messenger()->addError($this->t('Request for token from %title failed. More information is in the logs.', ['%title' => $link->title]));
+      return new RedirectResponse(Url::fromRoute('user.page')->toString());
+    }
+    else {
+      $parts = explode("\r\n\r\n", $rawResponse);
+
+      // @todo Why is missing param redirect_uri returned? It wasn't required in my test bed.
+      \Drupal::logger('recording_system_links')->notice($rawResponse);
+      $responseBody = array_pop($parts);
+      // @todo Error handling.
+      $authObj = json_decode($responseBody);
+      // Store the access token and refresh token in the
+      // recording_system_oauth_tokens table.
+      $userId = \Drupal::currentUser()->id();
+      $database = \Drupal::database();
+      $database
+        ->insert('recording_system_oauth_tokens')
+        ->fields([
+          'uid',
+          'recording_system',
+          'access_token',
+          'refresh_token',
+        ])
+        ->values([
+          $userId,
+          $machineName,
+          $authObj->access_token,
+          $authObj->refresh_token,
+        ])
+        ->execute();
+    }
   }
 
 }
