@@ -35,7 +35,7 @@ class SettingsForm extends ConfigFormBase {
     $form['location_type_terms'] = [
       '#title' => $this->t('Allowed location types'),
       '#type' => 'textarea',
-      '#description' => $this->t('If you want to limit the available location types that locations can be imported into, specify them here, one per line.'),
+      '#description' => $this->t('If you want to limit the available location types that locations can be imported into, specify the terms here, one per line.'),
       '#default_value' => $config->get('location_type_terms'),
     ];
     $form['submit'] = [
