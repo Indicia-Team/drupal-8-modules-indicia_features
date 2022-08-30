@@ -24,31 +24,30 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
       $query->addField('rst', 'uid', 'rst_uid');
       $links = $query->orderBy('title')->execute();
       foreach ($links as $link) {
-        if ($link->rst_id) {
+        // New link button with info.
+        $form['recording_system_links'][$link->machine_name] = [
+          '#type' => 'details',
+          '#open' => TRUE,
+          '#title' => $link->title,
+          '#description' => $link->description,
+        ];
+        if ($link->rst_uid) {
           // Existing link.
-          $form['recording_system_links'][$link->machine_name] = [
+          $form['recording_system_links'][$link->machine_name]['info'] = [
             '#type' => 'item',
-            '#title' => t('Your account is linked to to %title', ['%title' => $link->title]),
-            '#description' => $link->description,
+            '#title' => t('Your account is linked to to %title.', ['%title' => $link->title]),
           ];
         }
         else {
-          // New link button with info.
-          $form['recording_system_links'][$link->machine_name] = [
-            '#type' => 'details',
-            '#open' => TRUE,
-            '#title' => $link->title,
-            '#description' => $link->description,
+          $form['recording_system_links'][$link->machine_name]['connect_recording_system'] = [
+            '#type' => 'link',
+            '#title' => t('Connect to %title', ['%title' => $link->title]),
+            '#url' => Url::fromRoute('recording_system_links.connect', ['machineName' => $link->machine_name]),
+            '#attributes' => [
+              'class' => ['button'],
+            ],
           ];
         }
-        $form['recording_system_links'][$link->machine_name]['connect_recording_system'] = [
-          '#type' => 'link',
-          '#title' => t('Connect to %title', ['%title' => $link->title]),
-          '#url' => Url::fromRoute('recording_system_links.connect', ['machineName' => $link->machine_name]),
-          '#attributes' => [
-            'class' => ['button'],
-          ],
-        ];
       }
     }
 
