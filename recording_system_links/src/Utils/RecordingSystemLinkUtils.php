@@ -18,7 +18,7 @@ class RecordingSystemLinkUtils {
    *
    * @todo Move to a helper class?
    */
-  public static function getLinkFromMachineName($machineName) {
+  public static function getLinkConfigFromMachineName($machineName) {
     $results = \Drupal::database()->query(
       'SELECT * FROM {recording_system_config} WHERE machine_name = :machine_name',
       [':machine_name' => $machineName]);

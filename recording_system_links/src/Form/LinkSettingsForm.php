@@ -79,7 +79,7 @@ class LinkSettingsForm extends FormBase {
       '#machine_name' => [
         'exists' => [
           'Drupal\recording_system_links\Utils\RecordingSystemLinkUtils',
-          'getLinkFromMachineName',
+          'getLinkConfigFromMachineName',
         ],
         'source' => [
           'title',

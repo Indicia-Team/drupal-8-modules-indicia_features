@@ -10,6 +10,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\recording_system_links\Utils\RecordingSystemLinkUtils;
 
+/**
+ * Controller for endpoints relating to oAuth2 links to other systems.
+ */
 class RecordingSystemLinksController extends ControllerBase {
 
   /**
@@ -59,17 +62,11 @@ class RecordingSystemLinksController extends ControllerBase {
    *   Redirection to remote system.
    */
   public function connect($machineName) {
-    $link = RecordingSystemLinkUtils::getLinkFromMachineName($machineName);
+    $link = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
     if (empty($link)) {
       throw new NotFoundHttpException();
     }
-    // Get a trusted response, convoluted way of getting URL to avoid
-    // cacheability metadata error.
-    $url = Url::fromRoute('recording_system_links.oauth2-callback', ['machineName' => $machineName], ['absolute' => TRUE])->toString(TRUE);
-
-    // Only necessary until redirect_uri corrected on obs.org.
-    $url = Url::fromRoute('recording_system_links.oauth2-callback-foo', [], ['absolute' => TRUE])->toString(TRUE);
-
+    $url = $this->getRedirectUri($machineName);
     $response = new TrustedRedirectResponse('https://observation-test.org/api/v1/oauth2/authorize/?response_type=code&client_id=' . $link->client_id . '&redirect_uri=' . $url->getGeneratedUrl());
     $response->addCacheableDependency($url);
     return $response;
@@ -87,11 +84,11 @@ class RecordingSystemLinksController extends ControllerBase {
    * @todo Remove default param when redirect corrected.
    */
   public function oauth2Callback($machineName = 'observation_org') {
-    $link = RecordingSystemLinkUtils::getLinkFromMachineName($machineName);
-    if (empty($link)) {
+    $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
+    if (empty($linkConfig)) {
       throw new NotFoundHttpException();
     }
-    $tokenUrl = "{$link->oauth2_url}token/";
+    $tokenUrl = "{$linkConfig->oauth2_url}token/";
 
     $session = curl_init();
     // Set the POST options.
@@ -99,7 +96,8 @@ class RecordingSystemLinksController extends ControllerBase {
     curl_setopt($session, CURLOPT_HEADER, TRUE);
     curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($session, CURLOPT_POST, 1);
-    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$link->client_id&grant_type=authorization_code&code=$_GET[code]");
+    $urlString = $this->getRedirectUri($machineName)->getGeneratedUrl();
+    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$linkConfig->client_id&grant_type=authorization_code&code=$_GET[code]&redirect_uri=$urlString");
     $rawResponse = curl_exec($session);
     $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
     $curlErrno = curl_errno($session);
@@ -115,7 +113,7 @@ class RecordingSystemLinksController extends ControllerBase {
       }
       $errorInfo[] = $rawResponse;
       \Drupal::logger('recording_system_links')->error(implode(' ', $errorInfo));
-      \Drupal::messenger()->addError($this->t('Request for token from %title failed. More information is in the logs.', ['%title' => $link->title]));
+      \Drupal::messenger()->addError($this->t('Request for token from %title failed. More information is in the logs.', ['%title' => $linkConfig->title]));
       return new RedirectResponse(Url::fromRoute('user.page')->toString());
     }
     else {
@@ -130,22 +128,48 @@ class RecordingSystemLinksController extends ControllerBase {
       // recording_system_oauth_tokens table.
       $userId = \Drupal::currentUser()->id();
       $database = \Drupal::database();
+      $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
       $database
         ->insert('recording_system_oauth_tokens')
         ->fields([
           'uid',
-          'recording_system',
+          'recording_system_config_id',
           'access_token',
           'refresh_token',
         ])
         ->values([
           $userId,
-          $machineName,
+          $linkConfig->id,
           $authObj->access_token,
           $authObj->refresh_token,
         ])
         ->execute();
+      \Drupal::messenger()->addMessage($this->t('Your account is now connected to %title.', ['%title' => $linkConfig->title]));
+      return new RedirectResponse(Url::fromRoute('user.page')->toString());
     }
+  }
+
+  /**
+   * Calculate the redirect_uri for a given system machine name.
+   *
+   * @param string $machineName
+   *   Name of the system being redirected from.
+   *
+   * @return \Drupal\Core\GeneratedUrl
+   *   A GeneratedUrl object is returned, containing the generated URL plus
+   *   bubbleable metadata.
+   */
+  private function getRedirectUri($machineName) {
+    // Get a trusted response, convoluted way of getting URL to avoid
+    // cacheability metadata error.
+    $url = Url::fromRoute('recording_system_links.oauth2-callback', ['machineName' => $machineName], ['absolute' => TRUE])->toString(TRUE);
+
+    // @todo Remove this line of code. Only necessary until accepted
+    // redirect_uri updated to include machine_name (observation_org) on
+    // obs.org. Associated foo route can then also be removed.
+    $url = Url::fromRoute('recording_system_links.oauth2-callback-foo', [], ['absolute' => TRUE])->toString(TRUE);
+
+    return $url;
   }
 
 }
