@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\recording_system_links\Utils\SqlLiteLookups;
+use Drupal\recording_system_links\Utils\ObservationOrgUtils;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -178,6 +179,8 @@ class LinkSettingsForm extends FormBase {
     $lookups = new SqlLiteLookups();
     $lookups->getDatabase();
     $allTables = $lookups->listTables();
+    $foundMappingFields = [];
+    $requiredMappingFields = $formValues['api_provider'] === 'observation_org' ? ObservationOrgUtils::requiredMappingFields() : [];
     foreach ($lookupLines as $line) {
       // Skip empty lines.
       if (empty(trim($line))) {
@@ -190,19 +193,28 @@ class LinkSettingsForm extends FormBase {
         );
         break;
       }
-      if (!in_array($matches[1], ['taxonID', 'lifeStage'])) {
+      if (!in_array($matches[1], $requiredMappingFields)) {
         $form_state->setErrorByName(
           'lookups',
-          $this->t('Unrecognised lookup field name @field.', ['@field' => $matches[1]])
+          $this->t('Unrecognised mapping field name @field.', ['@field' => $matches[1]])
         );
         break;
       }
       if (!in_array($matches[2], $allTables)) {
         $form_state->setErrorByName(
           'lookups',
-          $this->t('Unrecognised lookup table @table.', ['@table' => $matches[2]])
+          $this->t('Unrecognised mapping table @table.', ['@table' => $matches[2]])
         );
         break;
+      }
+      $foundMappingFields[] = $matches[1];
+    }
+    if ($formValues['api_provider'] === 'observation_org') {
+      if (count(array_diff($requiredMappingFields, $foundMappingFields)) > 0) {
+        $form_state->setErrorByName(
+          'lookups', var_export(array_keys($lookupLines), TRUE) .
+          $this->t('The Observation.org API requires lookups for taxonID and lifeStage.')
+        );
       }
     }
   }

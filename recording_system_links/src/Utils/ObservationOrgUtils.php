@@ -12,22 +12,70 @@ namespace Drupal\recording_system_links\Utils;
  *
  * @todo Implement interface
  */
-class ObservationOrgUtils implements SystemProviderInterface {
+class ObservationOrgUtils implements RemoteSystemApiInterface {
+
+  /**
+   * Retrieve a list of fields that need a value mapping for this API.
+   *
+   * @return array
+   *   List of field names.
+   */
+  public static function requiredMappingFields() : array {
+    return ['taxonID', 'lifeStage'];
+  }
+
+  /**
+   * Adds mapped values to the record for mapped fields.
+   *
+   * For fields where the data value is mapped to a value in the destination
+   * API, adds the mapped values to the record.
+   *
+   * @param object $link
+   *   Link information object.
+   * @param array $record
+   *   Record data which will have additional keys added for the mapped values.
+   *
+   * @todo Should this be in a base class for API providers?
+   */
+  public function addMappedValues($link, array &$record) {
+    $linkLookupInfo = \helper_base::explode_lines_key_value_pairs($link->lookups);
+    $lookups = new SqlLiteLookups();
+    $lookups->getDatabase();
+    foreach (self::requiredMappingFields() as $field) {
+      $record["$field-mapped"] = $lookups->lookup($linkLookupInfo['taxonID'], $record['taxonID']);
+    }
+  }
 
   /**
    * Is the record valid for this provider's requirements?
    *
    * Messages are displayed for any validation errors.
    *
+   * @param object $link
+   *   Link information object.
    * @param array $record
    *   Record data.
    *
-   * @return bool
-   *   True if valid.
+   * @return array
+   *   List of errors, empty if valid.
    */
-  public function valid(array $record): bool {
-    // @todo Any records that don't match species are rejected?
-    return TRUE;
+  public function getValidationErrors($link, array $record): array {
+    $errors = [];
+    $requiredFields = ['taxonID', 'date_start', 'decimalLatitude', 'decimalLongitude'];
+    foreach ($requiredFields as $field) {
+      if (empty($record[$field])) {
+        $errors[$field] = t('The @field field is required.', ['@field' => $field]);
+      }
+    }
+    foreach (self::requiredMappingFields() as $field) {
+      if (!empty($record[$field]) && empty($record["$field-mapped"])) {
+        $errors[$field] = t('The @field field value "@value" cannot be mapped to the destination system.', [
+          '@field' => $field,
+          '@value' => $record[$field],
+        ]);
+      }
+    }
+    return $errors;
   }
 
   /**
@@ -49,7 +97,6 @@ class ObservationOrgUtils implements SystemProviderInterface {
     curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($session, CURLOPT_POST, 1);
     curl_setopt($session, CURLOPT_POSTFIELDS, $this->getRecordDataAsPostString($record, $link));
-    \Drupal::messenger()->addWarning($this->getRecordDataAsPostString($record, $link));
     curl_setopt($session, CURLOPT_HTTPHEADER, [
       "Authorization: Bearer $link->access_token",
       'Content-type: multipart/form-data; boundary=fieldboundary',
@@ -60,8 +107,7 @@ class ObservationOrgUtils implements SystemProviderInterface {
     $responsePayload = array_pop($arrResponse);
     $response = json_decode($responsePayload);
     $result = $this->checkPostErrors($session, $link, $response);
-    \Drupal::messenger()->addStatus(var_export($this->getRecordDataAsPostString($record, $link), TRUE));
-    \Drupal::messenger()->addStatus(var_export($response, TRUE));
+    \Drupal::messenger()->addStatus(var_export($responsePayload, TRUE));
     curl_close($session);
     return $result;
   }
@@ -125,7 +171,7 @@ class ObservationOrgUtils implements SystemProviderInterface {
     $fields = [
       'external_reference' => $record['occurrenceID'],
       'point' => "POINT($record[decimalLongitude] $record[decimalLatitude])",
-      'species' => $lookups->lookup($linkLookupInfo['taxonID'], $record['taxonID']),
+      'species' => $record['taxonID-mapped'],
       'date' => $record['eventDate'],
       'accuracy' => $record['coordinateUncertaintyInMeters'],
     ];
@@ -149,14 +195,8 @@ class ObservationOrgUtils implements SystemProviderInterface {
       }
       $fields['notes'] = implode(' ', $notes);
     }
-    // @todo Map lifeStages to the ID values in Observation.org.
-    if (!empty($record['lifeStage'])) {
-      if (isset($linkLookupInfo['lifeStage'])) {
-        $mappedValue = $lookups->lookup($linkLookupInfo['lifeStage'], $record['lifeStage']);
-        if ($mappedValue) {
-          $fields['life_stage'] = $mappedValue;
-        }
-      }
+    if (!empty($record['lifeStage-mapped'])) {
+      $fields['life_stage'] = $record['lifeStage-mapped'];
     }
     return $this->fieldsToRawPostString($fields, $record);
   }

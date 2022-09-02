@@ -65,19 +65,27 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
       return;
     };
     $records = RecordingSystemLinkUtils::getRecordsForSample($response['outer_id']);
+    if (count($records) === 0) {
+      return;
+    }
     $successfulSystemNames = [];
     // Query to get systems the user is connected to
     foreach ($links as $link) {
-      foreach ($records as $record) {
-        if ($link->api_provider === 'observation_org') {
+      switch ($link->api_provider) {
+        case 'observation_org':
           $providerUtils = new ObservationOrgUtils();
-        }
-        else {
+          break;
+
+        default:
           // Should not happen.
           throw new Exception('Invalid recording system link provider: ' . $link->api_provider);
-        }
-        if (!$providerUtils->valid($record)) {
+      }
+      foreach ($records as $record) {
+        $providerUtils->addMappedValues($link, $record);
+        $errors = $providerUtils->getValidationErrors($link, $record);
+        if (count($errors)) {
           \Drupal::messenger()->addWarning(t('A record could not be posted to @title as it was considered invalid for that system.', ['@title' => $link->title]));
+          \Drupal::messenger()->addWarning(implode(' ', $errors));
           continue;
         }
         if ($providerUtils->submit($link, $record)) {
