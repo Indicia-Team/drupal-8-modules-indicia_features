@@ -9,6 +9,7 @@ use Drupal\Core\Link;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\recording_system_links\Utils\RecordingSystemLinkUtils;
+use Drupal\recording_system_links\Utils\SqlLiteLookups;
 
 /**
  * Controller for endpoints relating to oAuth2 links to other systems.
@@ -51,6 +52,39 @@ class RecordingSystemLinksController extends ControllerBase {
   }
 
   /**
+   * An index page for the configured mappings tables.
+   */
+  public function manageMappings() {
+    $lookups = new SqlLiteLookups();
+    $lookups->getDatabase();
+    $mappingTables = $lookups->listTables();
+    $header = [
+      $this->t('Title'),
+      '',
+    ];
+    $rows = [];
+    foreach ($mappingTables as $table) {
+      $editUrl = Url::fromRoute('recording_system_links.configure_mapping', ['table' => $table]);
+      $editUrl->setOptions(['attributes' => ['class' => ['button']]]);
+      $rows[] = [
+        $table,
+        Link::fromTextAndUrl($this->t('Edit'), $editUrl),
+      ];
+    }
+    $render['table'] = [
+      '#type' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+    ];
+
+    $url = Url::fromRoute('recording_system_links.configure_mapping');
+    $url->setOptions(['attributes' => ['class' => ['button']]]);
+    $render['add_button'] = [Link::fromTextAndUrl($this->t('Add new mapping table'), $url)->toRenderable()];
+
+    return $render;
+  }
+
+  /**
    * Controller action to connect a user account to a recording system.
    *
    * Redirects to the remote systems authorization page via oAuth2.
@@ -62,12 +96,12 @@ class RecordingSystemLinksController extends ControllerBase {
    *   Redirection to remote system.
    */
   public function connect($machineName) {
-    $link = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
-    if (empty($link)) {
+    $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
+    if (empty($linkConfig)) {
       throw new NotFoundHttpException();
     }
     $url = $this->getRedirectUri($machineName);
-    $response = new TrustedRedirectResponse('https://observation-test.org/api/v1/oauth2/authorize/?response_type=code&client_id=' . $link->client_id . '&redirect_uri=' . $url->getGeneratedUrl());
+    $response = new TrustedRedirectResponse("{$linkConfig->oauth2_url}authorize/?response_type=code&client_id=$linkConfig->client_id&redirect_uri=" . $url->getGeneratedUrl());
     $response->addCacheableDependency($url);
     return $response;
   }
@@ -96,8 +130,8 @@ class RecordingSystemLinksController extends ControllerBase {
     curl_setopt($session, CURLOPT_HEADER, TRUE);
     curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($session, CURLOPT_POST, 1);
-    $urlString = $this->getRedirectUri($machineName)->getGeneratedUrl();
-    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$linkConfig->client_id&grant_type=authorization_code&code=$_GET[code]&redirect_uri=$urlString");
+    $redirectUri = $this->getRedirectUri($machineName)->getGeneratedUrl();
+    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$linkConfig->client_id&grant_type=authorization_code&code=$_GET[code]&redirect_uri=$redirectUri");
     $rawResponse = curl_exec($session);
     $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
     $curlErrno = curl_errno($session);
