@@ -1,5 +1,46 @@
 <?php
 
+use Drupal\recording_system_links\Utils\SqlLiteLookups;
+
+/**
+ * Implements hook_requirements().
+ *
+ * Prevent install if private file system not configured as we need somewhere
+ * safe to store SQLLite lookup data.
+ */
+function recording_system_links_requirements($phase) {
+  $requirements = [];
+  if (!\Drupal\Core\Site\Settings::get('file_private_path')) {
+    $requirements['recording_system_links_filesystem'] = [
+      'title' => t('Private file system'),
+      'description' => t('The private file system is not configured so the Recording system links module cannot be installed.'),
+      'severity' => REQUIREMENT_ERROR,
+    ];
+  }
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Sets up a SQLLite database to store lookup value mapping data.
+ */
+function recording_system_links_install() {
+  $lookups = new SqlLiteLookups();
+  $lookups->getDatabase();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function recording_system_links_uninstall() {
+  $lookups = new SqlLiteLookups();
+  $lookups->cleanupDatabaseFolder();
+}
+
+/**
+ * Implements hook_schema().
+ */
 function recording_system_links_schema() {
   $schema['recording_system_config'] = [
     'description' => 'List of configuration data for recording systems that are available to link to.',
@@ -42,6 +83,20 @@ function recording_system_links_schema() {
         'type' => 'varchar',
         'length' => 128,
         'not null' => TRUE,
+      ],
+      'trigger_on_hooks' => [
+        'description' => 'Use hooks to immediately sync records added to the website.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'trigger_on_cron' => [
+        'description' => 'Use cron to background sync records added to the website or historic records. 1 = new records only, 2 = historic records.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ],
+      'lookups' => [
+        'description' => 'Key=value pairs (one per line) where the key is a field name (as loaded from the filterable_remote_system_occurrences_report, e.g. lifeStage) and the value is the name of the lookup table to use for this field.',
+        'type' => 'text',
       ],
       'created_by' => [
         'description' => 'User id that created the link.',
