@@ -10,6 +10,18 @@ recording_system_links.configure_link:
     _form: '\Drupal\recording_system_links\Form\LinkSettingsForm'
   requirements:
     _permission: 'admin recording system links'
+recording_system_links.manage_mappings:
+  path: '/admin/config/recording-system-links/mappings'
+  defaults:
+    _controller: '\Drupal\recording_system_links\Controller\RecordingSystemLinksController::manageMappings'
+  requirements:
+    _permission: 'admin recording system links'
+recording_system_links.configure_mapping:
+  path: '/admin/config/recording-system-links/mappings/settings'
+  defaults:
+    _form: '\Drupal\recording_system_links\Form\MappingSettingsForm'
+  requirements:
+    _permission: 'admin recording system links'
 recording_system_links.connect:
   path: '/recording-system-links/{machineName}/connect'
   defaults:
