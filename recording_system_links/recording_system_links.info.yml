@@ -5,6 +5,6 @@ core_version_requirement: ^8 || ^9
 version: "8.x-1.0"
 package: "Indicia"
 type: module
-configure: recording_system_links.settings
+configure: recording_system_links.manage_links
 dependencies:
   - iform
