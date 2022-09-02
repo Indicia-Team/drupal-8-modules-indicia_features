@@ -5,10 +5,11 @@ namespace Drupal\recording_system_links\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\recording_system_links\Utils\SqlLiteLookups;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * A settings form foro the link to another recording system.
+ * A settings form for the link to another recording system.
  */
 class LinkSettingsForm extends FormBase {
 
@@ -28,14 +29,7 @@ class LinkSettingsForm extends FormBase {
     if ($existing) {
       // Editing an existing link.
       $link = \Drupal::database()->select('recording_system_config')
-        ->fields('recording_system_config', [
-          'title',
-          'machine_name',
-          'description',
-          'oauth2_url',
-          'client_id',
-          'api_provider',
-        ])
+        ->fields('recording_system_config')
         ->condition('id', $id)
         ->execute()->fetchAssoc();
 
@@ -59,6 +53,8 @@ class LinkSettingsForm extends FormBase {
         'oauth2_url' => '',
         'client_id' => '',
         'api_provider' => '',
+        'trigger_on_hooks' => 0,
+        'trigger_on_cron' => 0,
       ];
     }
 
@@ -116,6 +112,31 @@ class LinkSettingsForm extends FormBase {
       '#description' => $this->t('System providing the API, defines how the API calls to submit an occurrence work. Other providers may be added in future.'),
       '#required' => TRUE,
     ];
+    $form['trigger_on_hooks'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Trigger immediate synchronisation'),
+      '#default_value' => $link['trigger_on_hooks'],
+      '#options' => [
+        0 => 'No immediate synchronisation occurs',
+        1 => 'Records are immediately synchronised at the point they are added to the system',
+      ],
+    ];
+    $form['trigger_on_cron'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Trigger synchronisation in background'),
+      '#default_value' => $link['trigger_on_cron'],
+      '#options' => [
+        0 => 'No background synchronisation occurs',
+        1 => 'New records are synchronised in the background',
+        2 => 'Historic and new records are synchronised in the background',
+      ],
+    ];
+    $form['lookups'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Lookups'),
+      '#default_value' => $link['lookups'],
+      '#description' => $this->t('Lookups to use for fields in this link. Key=value pairs (one per line) where the key is a field name (as loaded from the filterable_remote_system_occurrences_report, e.g. lifeStage) and the value is the name of the lookup table to use for this field.'),
+    ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Save'),
@@ -151,13 +172,43 @@ class LinkSettingsForm extends FormBase {
         $this->t('This title is already used for an existing link. Please specify a unique title.')
       );
     }
+    // Check lookups are key/value pairs with the correct field and table names.
+    iform_load_helpers(['helper_base']);
+    $lookupLines = \helper_base::explode_lines($formValues['lookups']);
+    $lookups = new SqlLiteLookups();
+    $lookups->getDatabase();
+    $allTables = $lookups->listTables();
+    foreach ($lookupLines as $line) {
+      // Skip empty lines.
+      if (empty(trim($line))) {
+        continue;
+      }
+      if (!preg_match('/^([^=\r\n\s]+)=([^=\r\n\s]+)$/', $line, $matches)) {
+        $form_state->setErrorByName(
+          'lookups',
+          $this->t('The lookups are not specified as key=value pairs, one per line.') . $line . '.'
+        );
+        break;
+      }
+      if (!in_array($matches[1], ['taxonID', 'lifeStage'])) {
+        $form_state->setErrorByName(
+          'lookups',
+          $this->t('Unrecognised lookup field name @field.', ['@field' => $matches[1]])
+        );
+        break;
+      }
+      if (!in_array($matches[2], $allTables)) {
+        $form_state->setErrorByName(
+          'lookups',
+          $this->t('Unrecognised lookup table @table.', ['@table' => $matches[2]])
+        );
+        break;
+      }
+    }
   }
 
   /**
-   * Submit handler to save an key.
-   *
-   * Implements hook_submit() to submit a form produced by
-   * indicia_api_key().
+   * Submit handler to save a link form.
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $formValues = $form_state->getValues();
@@ -168,6 +219,9 @@ class LinkSettingsForm extends FormBase {
       'oauth2_url' => $formValues['oauth2_url'],
       'client_id' => $formValues['client_id'],
       'api_provider' => $formValues['api_provider'],
+      'trigger_on_hooks' => $formValues['trigger_on_hooks'],
+      'trigger_on_cron' => $formValues['trigger_on_cron'],
+      'lookups' => $formValues['lookups'],
       'changed' => time(),
       'changed_by' => time(),
     ];
