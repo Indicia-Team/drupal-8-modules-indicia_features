@@ -38,9 +38,10 @@ interface RemoteSystemApiInterface {
    * @param array $record
    *   Record data.
    *
-   * @return bool
-   *   True if successfull.
+   * @return array
+   *   Contains status (OK or fail), plus identifier (on success) or errors (on
+   *   fail).
    */
-  public function submit($link, array $record): bool;
+  public function submit($link, array $record): array;
 
 }

@@ -42,7 +42,7 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
     $lookups = new SqlLiteLookups();
     $lookups->getDatabase();
     foreach (self::requiredMappingFields() as $field) {
-      $record["$field-mapped"] = $lookups->lookup($linkLookupInfo['taxonID'], $record['taxonID']);
+      $record["$field-mapped"] = $lookups->lookup($linkLookupInfo[$field], $record[$field]);
     }
   }
 
@@ -61,7 +61,7 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
    */
   public function getValidationErrors($link, array $record): array {
     $errors = [];
-    $requiredFields = ['taxonID', 'date_start', 'decimalLatitude', 'decimalLongitude'];
+    $requiredFields = ['taxonID', 'eventDate', 'decimalLatitude', 'decimalLongitude'];
     foreach ($requiredFields as $field) {
       if (empty($record[$field])) {
         $errors[$field] = t('The @field field is required.', ['@field' => $field]);
@@ -86,10 +86,11 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
    * @param array $record
    *   Record data.
    *
-   * @return bool
-   *   True if successfull.
+   * @return array
+   *   Contains status (OK or fail), plus identifier (on success) or errors (on
+   *   fail).
    */
-  public function submit($link, array $record): bool {
+  public function submit($link, array $record): array {
     $session = curl_init();
     $url = preg_replace('/oauth2\/$/', '', $link->oauth2_url);
     curl_setopt($session, CURLOPT_URL, "{$url}observations/create-single/");
@@ -106,10 +107,21 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
     // Last part of response is the actual data.
     $responsePayload = array_pop($arrResponse);
     $response = json_decode($responsePayload);
-    $result = $this->checkPostErrors($session, $link, $response);
-    \Drupal::messenger()->addStatus(var_export($responsePayload, TRUE));
+    $errors = $this->checkPostErrors($session, $link, $response);
     curl_close($session);
-    return $result;
+    if (count($errors) > 0) {
+      return [
+        'status' => 'fail',
+        'errors' => $errors,
+      ];
+    }
+    else {
+      return [
+        'status' => 'OK',
+        'identifier' => $response->permalink,
+      ];
+    }
+
   }
 
   /**
@@ -141,14 +153,13 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
       }
       if ($response) {
         foreach ($response as $key => $msg) {
-          $messages[] = "$key: $msg";
+          $messages[] = "$key: " . json_encode($msg);
         }
       }
-      \Drupal::messenger()->addError(implode(' ', $messages));
       \Drupal::logger('recording_system_links')->error(implode(' ', $messages));
-      return FALSE;
+      return $messages;
     }
-    return TRUE;
+    return [];
   }
 
   /**

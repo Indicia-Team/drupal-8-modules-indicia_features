@@ -88,11 +88,13 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
           \Drupal::messenger()->addWarning(implode(' ', $errors));
           continue;
         }
-        if ($providerUtils->submit($link, $record)) {
+        $result = $providerUtils->submit($link, $record);
+        if ($result['status'] === 'OK') {
           $successfulSystemNames[$link->title] = $link->title;
         }
         else {
           \Drupal::messenger()->addError(t('An error occurred when posting a record to @title.', ['@title' => $link->title]));
+          \Drupal::messenger()->addError(implode(' ', $result['errors']));
         }
       }
     }
