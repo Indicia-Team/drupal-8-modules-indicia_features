@@ -87,11 +87,19 @@ function recording_system_links_schema() {
       'trigger_on_hooks' => [
         'description' => 'Use hooks to immediately sync records added to the website.',
         'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ],
       'trigger_on_cron' => [
-        'description' => 'Use cron to background sync records added to the website or historic records. 1 = new records only, 2 = historic records.',
+        'description' => 'Use cron to background sync records added to the website.',
         'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ],
+      'trigger_historic_on_link' => [
+        'description' => 'When a user links their account, synchronise their historic records.',
+        'type' => 'int',
+        'size' => 'tiny',
         'not null' => TRUE,
       ],
       'lookups' => [

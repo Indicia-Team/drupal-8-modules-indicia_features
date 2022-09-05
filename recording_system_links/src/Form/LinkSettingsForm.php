@@ -56,6 +56,7 @@ class LinkSettingsForm extends FormBase {
         'api_provider' => '',
         'trigger_on_hooks' => 0,
         'trigger_on_cron' => 0,
+        'trigger_historic_on_link' => 0,
       ];
     }
 
@@ -129,7 +130,15 @@ class LinkSettingsForm extends FormBase {
       '#options' => [
         0 => 'No background synchronisation occurs',
         1 => 'New records are synchronised in the background',
-        2 => 'Historic and new records are synchronised in the background',
+      ],
+    ];
+    $form['trigger_historic_on_link'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Trigger synchronisation of historic records when user links account'),
+      '#default_value' => $link['trigger_historic_on_link'],
+      '#options' => [
+        0 => 'No historic record synchronisation occurs',
+        1 => 'Historix records are synchronised when the user links their account',
       ],
     ];
     $form['lookups'] = [
@@ -233,6 +242,7 @@ class LinkSettingsForm extends FormBase {
       'api_provider' => $formValues['api_provider'],
       'trigger_on_hooks' => $formValues['trigger_on_hooks'],
       'trigger_on_cron' => $formValues['trigger_on_cron'],
+      'trigger_historic_on_link' => $formValues['trigger_historic_on_link'],
       'lookups' => $formValues['lookups'],
       'changed' => time(),
       'changed_by' => time(),
