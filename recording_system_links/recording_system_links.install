@@ -1,6 +1,6 @@
 <?php
 
-use Drupal\recording_system_links\Utils\SqlLiteLookups;
+use Drupal\recording_system_links\Utility\SqlLiteLookups;
 
 /**
  * Implements hook_requirements().
@@ -133,6 +133,12 @@ function recording_system_links_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+      ],
+      'tracking' => [
+        'type' => 'int',
+        'size' => 'big',
+        'description' => 'Tracking number (from cache_occurrences_functional) that synchronisation has been completed up to. Enables selection of just new and updated records.',
+        'unsigned' => TRUE,
       ],
     ],
     'primary key' => [
