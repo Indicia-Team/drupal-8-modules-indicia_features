@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\recording_system_links\Utils;
+namespace Drupal\recording_system_links\Utility;
 
 /**
  * Helper class with useful functions for the recording_system_links module.
@@ -26,8 +26,33 @@ class RecordingSystemLinkUtils {
     return $link;
   }
 
+
   /**
    * Retrieve a list of the recording system links from the database.
+   *
+   * @param string $type
+   *   Filter on the trigger on settings - one of 'all', 'hook' or 'cron'.
+   *
+   * @return array
+   *   List of links and access tokens.
+   */
+  public static function getAllSystemLinkList($type = 'all') {
+    $query = \Drupal::database()->select('recording_system_config', 'rsc');
+    $query->fields('rsc');
+    if ($type === 'hook') {
+      $query->condition('trigger_on_hooks', 0, '<>');
+    }
+    elseif ($type === 'cron') {
+      $query->condition('trigger_on_cron', 0, '<>');
+    }
+    $query->orderBy('title');
+    return $query->execute()->fetchAll();
+  }
+
+  /**
+   * Retrieve a list of the recording system links from the database.
+   *
+   * Includes the user's access tokens.
    *
    * @param bool $includeUnlinked
    *   Set to true to include system links that the user has not connected
@@ -36,9 +61,9 @@ class RecordingSystemLinkUtils {
    *   Filter on the trigger on settings - one of 'all', 'hook' or 'cron'.
    *
    * @return array
-   *   List of links objects.
+   *   List of links and access tokens.
    */
-  public static function getSystemLinkList($includeUnlinked, $type = 'all') {
+  public static function getUsersSystemLinkList($includeUnlinked, $type = 'all') {
     $query = \Drupal::database()->select('recording_system_config', 'rsc');
     $query->addJoin($includeUnlinked ? 'LEFT OUTER' : 'INNER', 'recording_system_oauth_tokens', 'rst', 'rst.recording_system_config_id=rsc.id AND rst.uid=' . \Drupal::currentUser()->id());
     $query->fields('rsc');

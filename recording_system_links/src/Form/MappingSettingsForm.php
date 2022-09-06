@@ -4,7 +4,7 @@ namespace Drupal\recording_system_links\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\recording_system_links\Utils\SqlLiteLookups;
+use Drupal\recording_system_links\Utility\SqlLiteLookups;
 use Drupal\Core\Url;
 
 /**

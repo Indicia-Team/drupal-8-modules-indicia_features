@@ -1,18 +1,24 @@
 <?php
 
-namespace Drupal\recording_system_links\Utils;
+namespace Drupal\recording_system_links\Plugin\RemoteRecordingSystemApi;
+
+use Drupal\recording_system_links\RemoteRecordingSystemApiInterface;
+use Drupal\recording_system_links\Utility\SqlLiteLookups;
 
 /**
- * Helper class with useful functions for the recording_system_links module.
+ * Plugin for interaction with Observation.org's API.
  *
  * Mappings for life stage can be obtained from the API, via
  * https://observation-test.org/api/v1/species-groups/ (to get the group IDs)
  * and https://observation-test.org/api/v1/species-groups/4/attributes/ (to get
  * the stages for the group).
  *
- * @todo Implement interface
+ * @RemoteRecordingSystemApi(
+ *   id = "observation_org",
+ *   title = @Translation("Observation.org")
+ * )
  */
-class ObservationOrgUtils implements RemoteSystemApiInterface {
+class ObservationOrg implements RemoteRecordingSystemApiInterface {
 
   /**
    * Retrieve a list of fields that need a value mapping for this API.
@@ -20,7 +26,7 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
    * @return array
    *   List of field names.
    */
-  public static function requiredMappingFields() : array {
+  public function requiredMappingFields() : array {
     return ['taxonID', 'lifeStage'];
   }
 
@@ -134,8 +140,8 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
    * @param object $response
    *   Response from Observation.org.
    *
-   * @return bool
-   *   TRUE if request was successful.
+   * @return array
+   *   List of errors messages, or empty array.
    */
   private function checkPostErrors($session, $link, $response) {
     $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
@@ -249,7 +255,7 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
         // End of the headers.
         $data .= "\r\n";
         // Add file content.
-        $data .= $this->getResizedWarehouseImageData($fileName, 1000, 1000) . "\r\n";
+        $data .= $this->getResizedWarehouseImageData($fileName, 1000, 1000, $record['occurrenceID']) . "\r\n";
       }
     }
     $data .= "--$delimiter--\r\n";
@@ -265,11 +271,13 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
    *   Maximum final image width.
    * @param int $heightDest
    *   Maximum final image height.
+   * @param int $recordId
+   *   Indicia record ID (for error reporting only).
    *
    * @return string
    *   Binary image data.
    */
-  private function getResizedWarehouseImageData($fileName, $widthDest, $heightDest) {
+  private function getResizedWarehouseImageData($fileName, $widthDest, $heightDest, $recordId) {
     list($widthSrc, $heightSrc, $type) = getimagesize("http://localhost/warehouse/upload/$fileName");
     $ratio = $widthSrc / $heightSrc;
     if ($widthDest / $heightDest > $ratio) {
@@ -280,7 +288,7 @@ class ObservationOrgUtils implements RemoteSystemApiInterface {
     }
     $imgSrc = imagecreatefromjpeg("http://localhost/warehouse/upload/$fileName");
     if ($imgSrc === FALSE) {
-      \Drupal::logger('recording_system_links')->warning("File $fileName could not be accessed from warehouse for upload to Observation.org for record $record[occurrenceID].");
+      \Drupal::logger('recording_system_links')->warning("File $fileName could not be accessed from warehouse for upload to Observation.org for record $recordId.");
     }
     $imgDest = imagecreatetruecolor($widthDest, $heightDest);
     imagecopyresampled($imgDest, $imgSrc, 0, 0, 0, 0, $widthDest, $heightDest, $widthSrc, $heightSrc);

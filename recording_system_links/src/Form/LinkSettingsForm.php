@@ -5,14 +5,43 @@ namespace Drupal\recording_system_links\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\recording_system_links\Utils\SqlLiteLookups;
-use Drupal\recording_system_links\Utils\ObservationOrgUtils;
+use Drupal\recording_system_links\Utility\SqlLiteLookups;
+use Drupal\recording_system_links\RemoteRecordingSystemApiManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * A settings form for the link to another recording system.
  */
 class LinkSettingsForm extends FormBase {
+
+  /**
+   * Service for remote system APIs.
+   *
+   * @var \Drupal\recording_system_links\RemoteRecordingSystemApiManager
+   */
+  protected $apiManager;
+
+  /**
+   * Constructor with dependency injection for API manager.
+   *
+   * @param \Drupal\recording_system_links\RemoteRecordingSystemApiManager $apiManager
+   *   API manager service to inject.
+   */
+  public function __construct(RemoteRecordingSystemApiManager $apiManager) {
+    $this->apiManager = $apiManager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    // Instantiates this form class.
+    return new static(
+      // Load the service required to construct this class.
+      $container->get('plugin.manager.remote_recording_system_api')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -76,7 +105,7 @@ class LinkSettingsForm extends FormBase {
       '#required' => TRUE,
       '#machine_name' => [
         'exists' => [
-          'Drupal\recording_system_links\Utils\RecordingSystemLinkUtils',
+          'Drupal\recording_system_links\Utility\RecordingSystemLinkUtils',
           'getLinkConfigFromMachineName',
         ],
         'source' => [
@@ -104,13 +133,16 @@ class LinkSettingsForm extends FormBase {
       '#description' => $this->t('Client ID used in calls to the oAuth2 service.'),
       '#required' => TRUE,
     ];
+    $apiProviders = $this->apiManager->getDefinitions();
+    $providerOptions = [];
+    foreach ($apiProviders as $provider => $info) {
+      $providerOptions[$provider] = $info['title'];
+    }
     $form['api_provider'] = [
       '#type' => 'select',
       '#title' => $this->t('API provider'),
       '#default_value' => $link['api_provider'],
-      '#options' => [
-        'observation_org' => 'Observation.org',
-      ],
+      '#options' => $providerOptions,
       '#description' => $this->t('System providing the API, defines how the API calls to submit an occurrence work. Other providers may be added in future.'),
       '#required' => TRUE,
     ];
@@ -189,7 +221,7 @@ class LinkSettingsForm extends FormBase {
     $lookups->getDatabase();
     $allTables = $lookups->listTables();
     $foundMappingFields = [];
-    $requiredMappingFields = $formValues['api_provider'] === 'observation_org' ? ObservationOrgUtils::requiredMappingFields() : [];
+    $requiredMappingFields = $this->apiManager->createInstance($formValues['api_provider'], [])->requiredMappingFields();
     foreach ($lookupLines as $line) {
       // Skip empty lines.
       if (empty(trim($line))) {
@@ -221,8 +253,8 @@ class LinkSettingsForm extends FormBase {
     if ($formValues['api_provider'] === 'observation_org') {
       if (count(array_diff($requiredMappingFields, $foundMappingFields)) > 0) {
         $form_state->setErrorByName(
-          'lookups', var_export(array_keys($lookupLines), TRUE) .
-          $this->t('The Observation.org API requires lookups for taxonID and lifeStage.')
+          'lookups',
+          $this->t('The Observation.org API requires lookups for @fields.', ['@fields' => implode(', ', array_diff($requiredMappingFields, $foundMappingFields))])
         );
       }
     }

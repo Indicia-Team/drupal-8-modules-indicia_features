@@ -2,8 +2,8 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\recording_system_links\Utils\RecordingSystemLinkUtils;
-use Drupal\recording_system_links\Utils\ObservationOrgUtils;
+use Drupal\recording_system_links\Utility\RecordingSystemLinkUtils;
+use Drupal\recording_system_links\Utility\ObservationOrgUtils;
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -20,7 +20,7 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
         '#open' => TRUE,
         '#title' => t('Recording system links'),
       ];
-      $links = RecordingSystemLinkUtils::getSystemLinkList(TRUE);
+      $links = RecordingSystemLinkUtils::getUsersSystemLinkList(TRUE);
       foreach ($links as $link) {
         // New link button with info.
         $form['recording_system_links'][$link->machine_name] = [
@@ -60,7 +60,7 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
 function recording_system_links_iform_after_submit(array $submission, $op, $response, &$msg) {
   if ($response['outer_table'] === 'sample') {
     // Retrieve links for hooks.
-    $links = RecordingSystemLinkUtils::getSystemLinkList(FALSE, 'hook');
+    $links = RecordingSystemLinkUtils::getUsersSystemLinkList(FALSE, 'hook');
     if (count($links) === 0) {
       return;
     };
@@ -69,28 +69,23 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
       return;
     }
     $successfulSystemNames = [];
+    $identifiers = [];
+    $apiManager = \Drupal::service('plugin.manager.remote_recording_system_api');
     // Query to get systems the user is connected to
     foreach ($links as $link) {
-      switch ($link->api_provider) {
-        case 'observation_org':
-          $providerUtils = new ObservationOrgUtils();
-          break;
-
-        default:
-          // Should not happen.
-          throw new Exception('Invalid recording system link provider: ' . $link->api_provider);
-      }
+      $api = $apiManager->createInstance($link->api_provider);
       foreach ($records as $record) {
-        $providerUtils->addMappedValues($link, $record);
-        $errors = $providerUtils->getValidationErrors($link, $record);
+        $api->addMappedValues($link, $record);
+        $errors = $api->getValidationErrors($link, $record);
         if (count($errors)) {
           \Drupal::messenger()->addWarning(t('A record could not be posted to @title as it was considered invalid for that system.', ['@title' => $link->title]));
           \Drupal::messenger()->addWarning(implode(' ', $errors));
           continue;
         }
-        $result = $providerUtils->submit($link, $record);
+        $result = $api->submit($link, $record);
         if ($result['status'] === 'OK') {
           $successfulSystemNames[$link->title] = $link->title;
+          $identifiers[$link->title] = $result['identifier'];
         }
         else {
           \Drupal::messenger()->addError(t('An error occurred when posting a record to @title.', ['@title' => $link->title]));
@@ -104,11 +99,30 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
       $lastSystemName = array_pop($successfulSystemNames);
       $systemNameString = (count($successfulSystemNames) > 0 ? implode(', ', $successfulSystemNames) . ' ' . t('and') . ' ' : '') . $lastSystemName;
       $entity = count($records) === 1 ? 'record' : 'sample';
-      $msg .= ' ' . t('The @entity has also been @action @systems.', [
+      $msg .= ' ' . t('The @entity has also been @action @systems (see @links).', [
         '@entity' => $entity,
         '@action' => t($opString),
         '@systems' => $systemNameString,
+        '@title' => $link->title,
+        '@links' => implode(', ', $identifiers),
       ]);
     }
   }
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * If cron sync enabled, then finds records since the last cron run for users
+ * who have linked their accounts and syncs them.
+ */
+function recording_system_links_iform_cron() {
+  $systemLinks = RecordingSystemLinkUtils::getAllSystemLinkList('cron');
+  foreach ($systemLinks as $link) {
+    // Tracking is in the $link data.
+    // Fetch new/update records since tracking for user list
+    //IndiciaUtils::fetchRecords($link->tracking, $link);
+    // Sync the records to linked system
+  }
+
 }

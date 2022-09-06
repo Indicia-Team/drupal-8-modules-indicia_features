@@ -8,8 +8,8 @@ use Drupal\Core\Url;
 use Drupal\Core\Link;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\recording_system_links\Utils\RecordingSystemLinkUtils;
-use Drupal\recording_system_links\Utils\SqlLiteLookups;
+use Drupal\recording_system_links\Utility\RecordingSystemLinkUtils;
+use Drupal\recording_system_links\Utility\SqlLiteLookups;
 
 /**
  * Controller for endpoints relating to oAuth2 links to other systems.

@@ -1,11 +1,11 @@
 <?php
 
-namespace Drupal\recording_system_links\Utils;
+namespace Drupal\recording_system_links;
 
 /**
  * Define methods required for an API providers' utility class.
  */
-interface RemoteSystemApiInterface {
+interface RemoteRecordingSystemApiInterface {
 
   /**
    * Retrieve a list of fields that need a value mapping for this API.
@@ -13,7 +13,7 @@ interface RemoteSystemApiInterface {
    * @return array
    *   List of field names.
    */
-  public static function requiredMappingFields() : array;
+  public function requiredMappingFields() : array;
 
   /**
    * Is the record valid for this provider's requirements?

@@ -1,0 +1,4 @@
+services:
+  plugin.manager.remote_recording_system_api:
+    class: Drupal\recording_system_links\RemoteRecordingSystemApiManager
+    parent: default_plugin_manager

@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\recording_system_links\Utils;
+namespace Drupal\recording_system_links\Utility;
 
 use Drupal\Core\Site\Settings;
 
@@ -150,12 +150,8 @@ class SqlLiteLookups {
    *   Folder to delete.
    */
   private function delTree($dir) {
-    \Drupal::messenger()->addMessage("delTree $dir");
     $files = array_diff(scandir($dir), ['.', '..']);
     foreach ($files as $file) {
-      if (!is_dir("$dir/$file")) {
-        \Drupal::messenger()->addMessage("unlink $dir/$file");
-      }
       (is_dir("$dir/$file")) ? $this->delTree("$dir/$file") : unlink("$dir/$file");
     }
     return rmdir($dir);
