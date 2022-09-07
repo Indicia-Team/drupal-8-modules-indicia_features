@@ -37,11 +37,15 @@ interface RemoteRecordingSystemApiInterface {
    *   Link information object.
    * @param array $record
    *   Record data.
+   * @param array $existingInfo
+   *   Optional existing record metadata if updating the remote system's copy,
+   *   containing entries for local_id, remote_id, href and uuid.
    *
    * @return array
-   *   Contains status (OK or fail), plus identifier (on success) or errors (on
-   *   fail).
+   *   Contains status (OK or fail), plus metadata (on success) or errors (on
+   *   fail). Metadata should contain required information for accessing the
+   *   record on the remote system and will be stored in occurrences.metadata.
    */
-  public function submit($link, array $record): array;
+  public function submit($link, array $record, array $existingInfo = NULL): array;
 
 }

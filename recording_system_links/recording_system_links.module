@@ -58,6 +58,7 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
  * hooks, then sychronise the records.
  */
 function recording_system_links_iform_after_submit(array $submission, $op, $response, &$msg) {
+  iform_load_helpers(['data_entry_helper']);
   if ($response['outer_table'] === 'sample') {
     // Retrieve links for hooks.
     $links = RecordingSystemLinkUtils::getUsersSystemLinkList(FALSE, 'hook');
@@ -68,30 +69,49 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
     if (count($records) === 0) {
       return;
     }
+    // Prepare warehouse auth tokens so we can write back the remote system's
+    // record info.
+    $conn = iform_get_connection_details();
+    $auth = data_entry_helper::get_read_write_auth($conn['website_id'], $conn['password']);
+    $auth['write_tokens']['persist_auth'] = TRUE;
     $successfulSystemNames = [];
-    $identifiers = [];
+    $apis = [];
     $apiManager = \Drupal::service('plugin.manager.remote_recording_system_api');
-    // Query to get systems the user is connected to
     foreach ($links as $link) {
-      $api = $apiManager->createInstance($link->api_provider);
-      foreach ($records as $record) {
-        $api->addMappedValues($link, $record);
-        $errors = $api->getValidationErrors($link, $record);
+      $apis[$link->api_provider] = $apiManager->createInstance($link->api_provider);
+    };
+    // Query to get systems the user is connected to.
+    foreach ($records as $record) {
+      $thisRecordMetadata = empty($record['metadata']) ? [] : json_decode($record['metadata'], TRUE);
+      $thisRecordMetadata['links'] = empty($thisRecordMetadata['links']) ? [] : $thisRecordMetadata['links'];
+      foreach ($links as $link) {
+        $recordToSend = array_merge($record);
+        $apis[$link->api_provider]->addMappedValues($link, $recordToSend);
+        $errors = $apis[$link->api_provider]->getValidationErrors($link, $recordToSend);
         if (count($errors)) {
           \Drupal::messenger()->addWarning(t('A record could not be posted to @title as it was considered invalid for that system.', ['@title' => $link->title]));
           \Drupal::messenger()->addWarning(implode(' ', $errors));
           continue;
         }
-        $result = $api->submit($link, $record);
+        $existingInfo = isset($thisRecordMetadata['links'][$link->title]) ? $thisRecordMetadata['links'][$link->title] : NULL;
+        $result = $apis[$link->api_provider]->submit($link, $recordToSend, $existingInfo);
         if ($result['status'] === 'OK') {
           $successfulSystemNames[$link->title] = $link->title;
-          $identifiers[$link->title] = $result['identifier'];
+          $thisRecordMetadata['links'][$link->title] = $result['metadata'];
         }
         else {
           \Drupal::messenger()->addError(t('An error occurred when posting a record to @title.', ['@title' => $link->title]));
           \Drupal::messenger()->addError(implode(' ', $result['errors']));
         }
       }
+      // Attach metadata to the warehouse record so we know it's linked.
+      $update = [
+        'occurrence:id' => $record['occurrenceID'],
+        'occurrence:metadata' => json_encode($thisRecordMetadata),
+        'website_id' => $conn['website_id'],
+      ];
+      $s = submission_builder::wrap($update, 'occurrence');
+      data_entry_helper::forward_post_to('save', $s, $auth['write_tokens']);
     }
     // Show a message summarising the extra places the record has been sent to.
     if (count($successfulSystemNames) > 0) {
@@ -99,12 +119,11 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
       $lastSystemName = array_pop($successfulSystemNames);
       $systemNameString = (count($successfulSystemNames) > 0 ? implode(', ', $successfulSystemNames) . ' ' . t('and') . ' ' : '') . $lastSystemName;
       $entity = count($records) === 1 ? 'record' : 'sample';
-      $msg .= ' ' . t('The @entity has also been @action @systems (see @links).', [
+      $msg .= ' ' . t('The @entity has also been @action @systems.', [
         '@entity' => $entity,
         '@action' => t($opString),
         '@systems' => $systemNameString,
         '@title' => $link->title,
-        '@links' => implode(', ', $identifiers),
       ]);
     }
   }

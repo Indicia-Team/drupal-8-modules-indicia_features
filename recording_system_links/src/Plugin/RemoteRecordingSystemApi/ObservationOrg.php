@@ -91,19 +91,29 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    *   Link information object.
    * @param array $record
    *   Record data.
+   * @param array $existingInfo
+   *   Optional existing record metadata if updating the remote system's copy,
+   *   containing entries for local_id, remote_id, href and uuid.
    *
    * @return array
-   *   Contains status (OK or fail), plus identifier (on success) or errors (on
-   *   fail).
+   *   Contains status (OK or fail), plus metadata (on success) or errors (on
+   *   fail). Metadata should contain required information for accessing the
+   *   record on the remote system and will be stored in occurrences.metadata.
    */
-  public function submit($link, array $record): array {
+  public function submit($link, array $record, $existingInfo = NULL): array {
+    $fields = $this->getRecordData($record, $existingInfo);
     $session = curl_init();
     $url = preg_replace('/oauth2\/$/', '', $link->oauth2_url);
     curl_setopt($session, CURLOPT_URL, "{$url}observations/create-single/");
     curl_setopt($session, CURLOPT_HEADER, TRUE);
     curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($session, CURLOPT_POST, 1);
-    curl_setopt($session, CURLOPT_POSTFIELDS, $this->getRecordDataAsPostString($record, $link));
+    if ($existingInfo) {
+      curl_setopt($session, CURLOPT_CUSTOMREQUEST, "PUT");
+    }
+    else {
+      curl_setopt($session, CURLOPT_POST, 1);
+    }
+    curl_setopt($session, CURLOPT_POSTFIELDS, $this->fieldsToRawPostString($fields, $record));
     curl_setopt($session, CURLOPT_HTTPHEADER, [
       "Authorization: Bearer $link->access_token",
       'Content-type: multipart/form-data; boundary=fieldboundary',
@@ -113,7 +123,7 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
     // Last part of response is the actual data.
     $responsePayload = array_pop($arrResponse);
     $response = json_decode($responsePayload);
-    $errors = $this->checkPostErrors($session, $link, $response);
+    $errors = $this->checkSubmitErrors($session, $link, $response);
     curl_close($session);
     if (count($errors) > 0) {
       return [
@@ -124,7 +134,11 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
     else {
       return [
         'status' => 'OK',
-        'identifier' => $response->permalink,
+        'metadata' => [
+          'href' => $response->permalink,
+          'id' => $response->id,
+          'uuid' => $fields['uuid'],
+        ],
       ];
     }
 
@@ -143,11 +157,11 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    * @return array
    *   List of errors messages, or empty array.
    */
-  private function checkPostErrors($session, $link, $response) {
+  private function checkSubmitErrors($session, $link, $response) {
     $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
     $curlErrno = curl_errno($session);
     // Check for an error, or check if the http response was not OK.
-    if ($curlErrno || $httpCode != 201) {
+    if ($curlErrno || !in_array($httpCode, [200, 201]) {
       $messages = [
         t('Error sending data to @title.', ['@title' => $link->title]),
       ];
@@ -173,15 +187,14 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    *
    * @param array $record
    *   Record data loaded from the warehouse.
-   * @param object $link
-   *   Link information object.
+   * @param array $existingInfo
+   *   Metadata stored for any existing records if doing update.
    *
    * @return string
    *   POST data string in Observation.org's format.
    */
-  private function getRecordDataAsPostString(array $record, $link) {
+  private function getRecordData(array $record, array $existingInfo = NULL) {
     iform_load_helpers(['helper_base']);
-    $linkLookupInfo = \helper_base::explode_lines_key_value_pairs($link->lookups);
     $lookups = new SqlLiteLookups();
     $lookups->getDatabase();
     // @todo consider vague dates.
@@ -215,7 +228,26 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
     if (!empty($record['lifeStage-mapped'])) {
       $fields['life_stage'] = $record['lifeStage-mapped'];
     }
-    return $this->fieldsToRawPostString($fields, $record);
+    // Uuid required to allow updates on Observation.org.
+    if (!empty($existingInfo)) {
+      $fields['uuid'] = $existingInfo['uuid'];
+    }
+    else {
+      $fields['uuid'] = $this->guidv4();
+    }
+    return $fields;
+  }
+
+  /**
+   * Generate a V4 UUID.
+   *
+   * For unique record identification on Observation.org.
+   */
+  private function guidv4() {
+    $data = $data ?? random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // set version to 0100
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
   }
 
   /**
