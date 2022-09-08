@@ -2,6 +2,7 @@
 
 namespace Drupal\recording_system_links\Plugin\RemoteRecordingSystemApi;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\recording_system_links\RemoteRecordingSystemApiInterface;
 use Drupal\recording_system_links\Utility\SqlLiteLookups;
 
@@ -19,6 +20,8 @@ use Drupal\recording_system_links\Utility\SqlLiteLookups;
  * )
  */
 class ObservationOrg implements RemoteRecordingSystemApiInterface {
+
+  use StringTranslationTrait;
 
   /**
    * Retrieve a list of fields that need a value mapping for this API.
@@ -67,15 +70,20 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    */
   public function getValidationErrors($link, array $record): array {
     $errors = [];
-    $requiredFields = ['taxonID', 'eventDate', 'decimalLatitude', 'decimalLongitude'];
+    $requiredFields = [
+      'taxonID',
+      'eventDate',
+      'decimalLatitude',
+      'decimalLongitude',
+    ];
     foreach ($requiredFields as $field) {
       if (empty($record[$field])) {
-        $errors[$field] = t('The @field field is required.', ['@field' => $field]);
+        $errors[$field] = $this->t('The @field field is required.', ['@field' => $field]);
       }
     }
     foreach (self::requiredMappingFields() as $field) {
       if (!empty($record[$field]) && empty($record["$field-mapped"])) {
-        $errors[$field] = t('The @field field value "@value" cannot be mapped to the destination system.', [
+        $errors[$field] = $this->t('The @field field value "@value" cannot be mapped to the destination system.', [
           '@field' => $field,
           '@value' => $record[$field],
         ]);
@@ -89,6 +97,9 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    *
    * @param object $link
    *   Link information object.
+   * @param array $tokens
+   *   Contains enties for access (oAuth2 access token) and refresh (oAuth2
+   *   refresh token).
    * @param array $record
    *   Record data.
    * @param array $existingInfo
@@ -100,7 +111,7 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    *   fail). Metadata should contain required information for accessing the
    *   record on the remote system and will be stored in occurrences.metadata.
    */
-  public function submit($link, array $record, $existingInfo = NULL): array {
+  public function submit($link, array $tokens, array $record, array $existingInfo = NULL): array {
     $fields = $this->getRecordData($record, $existingInfo);
     $session = curl_init();
     $url = preg_replace('/oauth2\/$/', '', $link->oauth2_url);
@@ -115,15 +126,11 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
     }
     curl_setopt($session, CURLOPT_POSTFIELDS, $this->fieldsToRawPostString($fields, $record));
     curl_setopt($session, CURLOPT_HTTPHEADER, [
-      "Authorization: Bearer $link->access_token",
+      "Authorization: Bearer $tokens[access_token]",
       'Content-type: multipart/form-data; boundary=fieldboundary',
     ]);
-    $rawResponse = curl_exec($session);
-    $arrResponse = explode("\r\n\r\n", $rawResponse);
-    // Last part of response is the actual data.
-    $responsePayload = array_pop($arrResponse);
-    $response = json_decode($responsePayload);
-    $errors = $this->checkSubmitErrors($session, $link, $response);
+    $response = $this->getCurlResponse($session);
+    $errors = $this->checkSubmitErrors($link, $response);
     curl_close($session);
     if (count($errors) > 0) {
       return [
@@ -135,8 +142,8 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
       return [
         'status' => 'OK',
         'metadata' => [
-          'href' => $response->permalink,
-          'id' => $response->id,
+          'href' => $response['data']->permalink,
+          'id' => $response['data']->id,
           'uuid' => $fields['uuid'],
         ],
       ];
@@ -145,37 +152,60 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
   }
 
   /**
+   * Utility method for retrieving a cUrl response in a usable form.
+   *
+   * @param mixed $session
+   *   cUrl handle.
+   *
+   * @return array
+   *   Reponse data.
+   */
+  private function getCurlResponse($session) {
+    $rawResponse = curl_exec($session);
+    $arrResponse = explode("\r\n\r\n", $rawResponse);
+    // Last part of response is the actual data.
+    $responsePayload = array_pop($arrResponse);
+    $responseObj = json_decode($responsePayload);
+    $r = [
+      'data' => $responseObj,
+      'httpCode' => curl_getinfo($session, CURLINFO_HTTP_CODE),
+      'curlErrNo' => curl_errno($session),
+    ];
+    if ($r['curlErrNo']) {
+      $r['curlError'] = curl_error($session);
+    }
+    return $r;
+  }
+
+  /**
    * Checks the results of a cUrl POST and displays errors.
    *
-   * @param object $session
-   *   cUrl session.
    * @param object $link
    *   Link information object.
-   * @param object $response
-   *   Response from Observation.org.
+   * @param array $response
+   *   Response information from Observation.org.
    *
    * @return array
    *   List of errors messages, or empty array.
    */
-  private function checkSubmitErrors($session, $link, $response) {
-    $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
-    $curlErrno = curl_errno($session);
+  private function checkSubmitErrors($link, array $response) {
     // Check for an error, or check if the http response was not OK.
-    if ($curlErrno || !in_array($httpCode, [200, 201]) {
+    if ($response['curlErrNo'] || !in_array($response['httpCode'], [200, 201])) {
       $messages = [
-        t('Error sending data to @title.', ['@title' => $link->title]),
+        $this->t('Error sending data to @title.', ['@title' => $link->title]),
       ];
-      if ($curlErrno) {
-        $messages[] = t('Error number @errNo', ['@errNo' => $curlErrno]) . ' ' . curl_error($session);
+      if ($response['curlErrNo']) {
+        $messages[] = $this->t('Error number @errNo', ['@errNo' => $response['curlErrNo']]) . ' ' . $response['curlError'];
       }
-      if ($httpCode !== 200) {
-        $messages[] = t('Response status: @code', ['@code' => $httpCode]);
+      if ($response['httpCode'] !== 200) {
+        $messages[] = $this->t('Response status: @code', ['@code' => $response['httpCode']]);
       }
       if ($response) {
         foreach ($response as $key => $msg) {
           $messages[] = "$key: " . json_encode($msg);
         }
       }
+      // @todo Dependency injection for logger.
       \Drupal::logger('recording_system_links')->error(implode(' ', $messages));
       return $messages;
     }
@@ -208,11 +238,12 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
     if (preg_match('/^\d+$/', $record['organismQuantity'])) {
       $fields['number'] = $record['organismQuantity'];
     }
-    // @todo Dependency injection for t().
-    if (in_array(strtolower($record['sex']), [t('male'), substr(t('male'), 0, 1)])) {
+    $maleChoices = [$this->t('male'), substr($this->t('male'), 0, 1)];
+    $femaleChoices = [$this->t('female'), substr($this->t('female'), 0, 1)];
+    if (in_array(strtolower($record['sex']), $maleChoices)) {
       $fields['sex'] = 'M';
     }
-    elseif (in_array(strtolower($record['sex']), [t('female'), substr(t('female'), 0, 1)])) {
+    elseif (in_array(strtolower($record['sex']), $femaleChoices)) {
       $fields['sex'] = 'F';
     }
     if (!empty($record['occurrencRemarks']) || !empty($record['eventRemarks'])) {
@@ -242,11 +273,14 @@ class ObservationOrg implements RemoteRecordingSystemApiInterface {
    * Generate a V4 UUID.
    *
    * For unique record identification on Observation.org.
+   *
+   * @return string
+   *   UUID.
    */
   private function guidv4() {
     $data = $data ?? random_bytes(16);
-    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // set version to 0100
-    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // set bits 6-7 to 10
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
   }
 

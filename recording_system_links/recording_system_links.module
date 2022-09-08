@@ -2,8 +2,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\recording_system_links\Utility\RecordingSystemLinkUtils;
-use Drupal\recording_system_links\Utility\ObservationOrgUtils;
+use Drupal\recording_system_links\Utility\IndiciaUtils;
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -20,7 +19,8 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
         '#open' => TRUE,
         '#title' => t('Recording system links'),
       ];
-      $links = RecordingSystemLinkUtils::getUsersSystemLinkList(TRUE);
+      $utils = \Drupal::service('recording_system_links.recording_system_utils');
+      $links = $utils->getUsersSystemLinkList(TRUE);
       foreach ($links as $link) {
         // New link button with info.
         $form['recording_system_links'][$link->machine_name] = [
@@ -58,74 +58,18 @@ function recording_system_links_form_user_form_alter(&$form, FormStateInterface 
  * hooks, then sychronise the records.
  */
 function recording_system_links_iform_after_submit(array $submission, $op, $response, &$msg) {
-  iform_load_helpers(['data_entry_helper']);
   if ($response['outer_table'] === 'sample') {
     // Retrieve links for hooks.
-    $links = RecordingSystemLinkUtils::getUsersSystemLinkList(FALSE, 'hook');
+    $utils = \Drupal::service('recording_system_links.recording_system_utils');
+    $links = $utils->getUsersSystemLinkList(FALSE, 'hook');
     if (count($links) === 0) {
       return;
     };
-    $records = RecordingSystemLinkUtils::getRecordsForSample($response['outer_id']);
+    $records = IndiciaUtils::getRecordsForSample($response['outer_id']);
     if (count($records) === 0) {
       return;
     }
-    // Prepare warehouse auth tokens so we can write back the remote system's
-    // record info.
-    $conn = iform_get_connection_details();
-    $auth = data_entry_helper::get_read_write_auth($conn['website_id'], $conn['password']);
-    $auth['write_tokens']['persist_auth'] = TRUE;
-    $successfulSystemNames = [];
-    $apis = [];
-    $apiManager = \Drupal::service('plugin.manager.remote_recording_system_api');
-    foreach ($links as $link) {
-      $apis[$link->api_provider] = $apiManager->createInstance($link->api_provider);
-    };
-    // Query to get systems the user is connected to.
-    foreach ($records as $record) {
-      $thisRecordMetadata = empty($record['metadata']) ? [] : json_decode($record['metadata'], TRUE);
-      $thisRecordMetadata['links'] = empty($thisRecordMetadata['links']) ? [] : $thisRecordMetadata['links'];
-      foreach ($links as $link) {
-        $recordToSend = array_merge($record);
-        $apis[$link->api_provider]->addMappedValues($link, $recordToSend);
-        $errors = $apis[$link->api_provider]->getValidationErrors($link, $recordToSend);
-        if (count($errors)) {
-          \Drupal::messenger()->addWarning(t('A record could not be posted to @title as it was considered invalid for that system.', ['@title' => $link->title]));
-          \Drupal::messenger()->addWarning(implode(' ', $errors));
-          continue;
-        }
-        $existingInfo = isset($thisRecordMetadata['links'][$link->title]) ? $thisRecordMetadata['links'][$link->title] : NULL;
-        $result = $apis[$link->api_provider]->submit($link, $recordToSend, $existingInfo);
-        if ($result['status'] === 'OK') {
-          $successfulSystemNames[$link->title] = $link->title;
-          $thisRecordMetadata['links'][$link->title] = $result['metadata'];
-        }
-        else {
-          \Drupal::messenger()->addError(t('An error occurred when posting a record to @title.', ['@title' => $link->title]));
-          \Drupal::messenger()->addError(implode(' ', $result['errors']));
-        }
-      }
-      // Attach metadata to the warehouse record so we know it's linked.
-      $update = [
-        'occurrence:id' => $record['occurrenceID'],
-        'occurrence:metadata' => json_encode($thisRecordMetadata),
-        'website_id' => $conn['website_id'],
-      ];
-      $s = submission_builder::wrap($update, 'occurrence');
-      data_entry_helper::forward_post_to('save', $s, $auth['write_tokens']);
-    }
-    // Show a message summarising the extra places the record has been sent to.
-    if (count($successfulSystemNames) > 0) {
-      $opString = ['C' => 'added to', 'U' => 'updated on', 'D' => 'removed from'][$op];
-      $lastSystemName = array_pop($successfulSystemNames);
-      $systemNameString = (count($successfulSystemNames) > 0 ? implode(', ', $successfulSystemNames) . ' ' . t('and') . ' ' : '') . $lastSystemName;
-      $entity = count($records) === 1 ? 'record' : 'sample';
-      $msg .= ' ' . t('The @entity has also been @action @systems.', [
-        '@entity' => $entity,
-        '@action' => t($opString),
-        '@systems' => $systemNameString,
-        '@title' => $link->title,
-      ]);
-    }
+    $msg .= ' ' . $utils->syncRecords($records, $links, TRUE, $op);
   }
 }
 
@@ -135,13 +79,40 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
  * If cron sync enabled, then finds records since the last cron run for users
  * who have linked their accounts and syncs them.
  */
-function recording_system_links_iform_cron() {
-  $systemLinks = RecordingSystemLinkUtils::getAllSystemLinkList('cron');
-  foreach ($systemLinks as $link) {
-    // Tracking is in the $link data.
-    // Fetch new/update records since tracking for user list
-    //IndiciaUtils::fetchRecords($link->tracking, $link);
-    // Sync the records to linked system
+function recording_system_links_cron() {
+  $utils = \Drupal::service('recording_system_links.recording_system_utils');
+  $links = $utils->getAllSystemLinkWithUserIdsList('cron');
+  /*
+   * Fetching records - find list of survey IDs to filter. If between 1 and 10, then filter, else don't bother.
+   * Find list of user IDs to filter, if between 1 and 10 then filter, else don't bother.
+   * Filter to tracking > lowest tracking for cron enabled links
+   * Save a link - if cron turned on and wasn't before, then reset tracking to current highest. DONE
+   * In the records loop, skip for a link if < link's tracking.
+   * All links get the same tracking number after loop.
+   *
+   */
+  // Get tracking from the last run.
+  $tracking = $utils->getMinTracking($links);
+  $currentMaxTracking = IndiciaUtils::getCurrentMaxTracking();
+  //$surveyIds = $utils->getAllSurveysForLinks($systemLinks);
+
+  $warehouseUserIds = $utils->getWarehouseUserIdFilterForCron();
+
+  if (empty($warehouseUserIds)) {
+    // No users, so just store the current tracking, then stop.
+    $utils->setCurrentTrackingOnLinks($links);
+    return;
   }
 
+  $records = IndiciaUtils::getRecordsFromTracking($tracking, /*$surveyIds, */$warehouseUserIds);
+  if (count($records) === 0) {
+    // Wind forward to the current tracking value.
+    $utils->setCurrentTrackingOnLinks($links, $currentMaxTracking);
+    return;
+  }
+  $utils->syncRecords($records, $links);
+  $lastRecord = array_pop($records);
+  // Set the link tracking to the last record's tracking in case not all
+  // records were returned.
+  $utils->setCurrentTrackingOnLinks($links, $lastRecord['tracking']);
 }

@@ -173,6 +173,12 @@ function recording_system_links_schema() {
         'type' => 'text',
         'default' => NULL,
       ],
+      'expiry' => [
+        'description' => 'Unix timestamp of expected expiry.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
       'changed' => array(
         'description' => 'The Unix timestamp when the tokens record was most recently saved.',
         'type' => 'int',

@@ -8,7 +8,6 @@ use Drupal\Core\Url;
 use Drupal\Core\Link;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\recording_system_links\Utility\RecordingSystemLinkUtils;
 use Drupal\recording_system_links\Utility\SqlLiteLookups;
 
 /**
@@ -96,7 +95,8 @@ class RecordingSystemLinksController extends ControllerBase {
    *   Redirection to remote system.
    */
   public function connect($machineName) {
-    $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
+    $utils = \Drupal::service('recording_system_links.recording_system_utils');
+    $linkConfig = $utils->getLinkConfigFromMachineName($machineName);
     if (empty($linkConfig)) {
       throw new NotFoundHttpException();
     }
@@ -116,71 +116,21 @@ class RecordingSystemLinksController extends ControllerBase {
    *   Name of the system being redirected from.
    *
    * @todo Remove default param when redirect corrected.
+   * @todo Dependency inject record_system_utils and messenger.
    */
   public function oauth2Callback($machineName = 'observation_org') {
-    $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
+    $utils = \Drupal::service('recording_system_links.recording_system_utils');
+    $linkConfig = $utils->getLinkConfigFromMachineName($machineName);
     if (empty($linkConfig)) {
       throw new NotFoundHttpException();
     }
-    $tokenUrl = "{$linkConfig->oauth2_url}token/";
-
-    $session = curl_init();
-    // Set the POST options.
-    curl_setopt($session, CURLOPT_URL, $tokenUrl);
-    curl_setopt($session, CURLOPT_HEADER, TRUE);
-    curl_setopt($session, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($session, CURLOPT_POST, 1);
-    $redirectUri = $this->getRedirectUri($machineName)->getGeneratedUrl();
-    curl_setopt($session, CURLOPT_POSTFIELDS, "client_id=$linkConfig->client_id&grant_type=authorization_code&code=$_GET[code]&redirect_uri=$redirectUri");
-    $rawResponse = curl_exec($session);
-    $httpCode = curl_getinfo($session, CURLINFO_HTTP_CODE);
-    $curlErrno = curl_errno($session);
-    if ($curlErrno || $httpCode !== 200) {
-      $errorInfo = ['Request failed when exchanging code for a token.'];
-      $errorInfo[] = "URL: $tokenUrl.";
-      $errorInfo[] = "POST data: client_id={client_id}&grant_type=authorization_code&code={code}.";
-      if ($curlErrno) {
-        $errorInfo[] = 'cUrl error: ' . $curlErrno . ': ' . curl_error($session);
-      }
-      if ($httpCode !== 200) {
-        $errorInfo[] = "HTTP status $httpCode.";
-      }
-      $errorInfo[] = $rawResponse;
-      \Drupal::logger('recording_system_links')->error(implode(' ', $errorInfo));
-      \Drupal::messenger()->addError($this->t('Request for token from %title failed. More information is in the logs.', ['%title' => $linkConfig->title]));
-      return new RedirectResponse(Url::fromRoute('user.page')->toString());
-    }
-    else {
-      $parts = explode("\r\n\r\n", $rawResponse);
-
-      // @todo Why is missing param redirect_uri returned? It wasn't required in my test bed.
-      \Drupal::logger('recording_system_links')->notice($rawResponse);
-      $responseBody = array_pop($parts);
-      // @todo Error handling.
-      $authObj = json_decode($responseBody);
-      // Store the access token and refresh token in the
-      // recording_system_oauth_tokens table.
-      $userId = \Drupal::currentUser()->id();
-      $database = \Drupal::database();
-      $linkConfig = RecordingSystemLinkUtils::getLinkConfigFromMachineName($machineName);
-      $database
-        ->insert('recording_system_oauth_tokens')
-        ->fields([
-          'uid',
-          'recording_system_config_id',
-          'access_token',
-          'refresh_token',
-        ])
-        ->values([
-          $userId,
-          $linkConfig->id,
-          $authObj->access_token,
-          $authObj->refresh_token,
-        ])
-        ->execute();
-      \Drupal::messenger()->addMessage($this->t('Your account is now connected to %title.', ['%title' => $linkConfig->title]));
-      return new RedirectResponse(Url::fromRoute('user.page')->toString());
-    }
+    $utils->getAccessToken($linkConfig, \Drupal::currentUser()->id(), [
+      'code' => $_GET['code'],
+      'redirect_uri' => $this->getRedirectUri($machineName)->getGeneratedUrl(),
+    ]);
+    // @todo Dependency injection for messenger.
+    \Drupal::messenger()->addMessage($this->t('Your account is now connected to %title.', ['%title' => $linkConfig->title]));
+    return new RedirectResponse(Url::fromRoute('user.page')->toString());
   }
 
   /**

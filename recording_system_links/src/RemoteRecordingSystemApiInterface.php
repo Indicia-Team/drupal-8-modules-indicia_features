@@ -35,6 +35,9 @@ interface RemoteRecordingSystemApiInterface {
    *
    * @param object $link
    *   Link information object.
+   * @param array $tokens
+   *   Contains enties for access (oAuth2 access token) and refresh (oAuth2
+   *   refresh token).
    * @param array $record
    *   Record data.
    * @param array $existingInfo
@@ -46,6 +49,6 @@ interface RemoteRecordingSystemApiInterface {
    *   fail). Metadata should contain required information for accessing the
    *   record on the remote system and will be stored in occurrences.metadata.
    */
-  public function submit($link, array $record, array $existingInfo = NULL): array;
+  public function submit($link, array $tokens, array $record, array $existingInfo = NULL): array;
 
 }

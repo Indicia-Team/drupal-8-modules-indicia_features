@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\recording_system_links\Utility\SqlLiteLookups;
+use Drupal\recording_system_links\Utility\IndiciaUtils;
 use Drupal\recording_system_links\RemoteRecordingSystemApiManager;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -65,6 +66,7 @@ class LinkSettingsForm extends FormBase {
 
       if (empty($link)) {
         // Requested an key with an id that doesn't exist in DB.
+        // @todo Dependency injection for messenger.
         \Drupal::messenger()->addMessage('Unknown recording system link');
         throw new NotFoundHttpException();
       }
@@ -86,6 +88,7 @@ class LinkSettingsForm extends FormBase {
         'trigger_on_hooks' => 0,
         'trigger_on_cron' => 0,
         'trigger_historic_on_link' => 0,
+        'lookups' => '',
       ];
     }
 
@@ -105,8 +108,8 @@ class LinkSettingsForm extends FormBase {
       '#required' => TRUE,
       '#machine_name' => [
         'exists' => [
-          'Drupal\recording_system_links\Utility\RecordingSystemLinkUtils',
-          'getLinkConfigFromMachineName',
+          $this,
+          'machineNameExists',
         ],
         'source' => [
           'title',
@@ -170,7 +173,7 @@ class LinkSettingsForm extends FormBase {
       '#default_value' => $link['trigger_historic_on_link'],
       '#options' => [
         0 => 'No historic record synchronisation occurs',
-        1 => 'Historix records are synchronised when the user links their account',
+        1 => 'Historic records are synchronised when the user links their account',
       ],
     ];
     $form['lookups'] = [
@@ -265,6 +268,7 @@ class LinkSettingsForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $formValues = $form_state->getValues();
+    $this->setTrackingIfCronEnabled($formValues);
     $values = [
       'title' => $formValues['title'],
       'machine_name' => $formValues['machine_name'],
@@ -278,6 +282,7 @@ class LinkSettingsForm extends FormBase {
       'lookups' => $formValues['lookups'],
       'changed' => time(),
       'changed_by' => time(),
+      'tracking' => $formValues['tracking'],
     ];
     $userId = \Drupal::currentUser()->id();
     // Save the link with appropriate metadata.
@@ -300,6 +305,50 @@ class LinkSettingsForm extends FormBase {
     \Drupal::messenger()->addMessage($this->t('Link %title has been saved', ['%title' => $formValues['title']]));
     $url = Url::fromRoute('recording_system_links.manage_links');
     $form_state->setRedirectUrl($url);
+  }
+
+  /**
+   * If enabling cron, need to capture highest occurrences feed tracking value.
+   *
+   * So can fetch just changes, not past data.
+   *
+   * @param array $values
+   *   Form values to save which will be modified with the tracking value.
+   */
+  private function setTrackingIfCronEnabled(array &$values) {
+    if ($values['trigger_on_cron'] === '0') {
+      // Not setting cron on, so nothing to do.
+      $values['tracking'] = NULL;
+      return;
+    }
+    if (!empty($values['id'])) {
+      $linkInfo = \Drupal::database()->select('recording_system_config')
+        ->fields('recording_system_config', ['trigger_on_cron'])
+        ->condition('id', $values['id'])
+        ->execute()->fetchAssoc();
+      if ($linkInfo['trigger_on_cron'] === '1') {
+        // Already enabled.
+        return;
+      }
+    }
+    $values['tracking'] = IndiciaUtils::getCurrentMaxTracking();
+  }
+
+  /**
+   * Allows the form machine name element to check for existing names.
+   *
+   * @param string $machineName
+   *   Machine name to check.
+   *
+   * @return bool
+   *   True if it exists.
+   */
+  public function machineNameExists($machineName) {
+    $results = \Drupal::database()->query(
+      'SELECT id FROM {recording_system_config} WHERE machine_name = :machine_name',
+      [':machine_name' => $machineName]);
+    $link = $results->fetch();
+    return $link ? TRUE : FALSE;
   }
 
 }
