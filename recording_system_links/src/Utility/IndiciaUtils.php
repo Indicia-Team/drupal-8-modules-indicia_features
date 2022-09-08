@@ -54,6 +54,8 @@ class IndiciaUtils {
    *
    * @param int $tracking
    *   Tracking ID.
+   * @param array|null $surveyIds
+   *   Array of survey IDs to limit to, or NULL if not limited.
    * @param array $warehouseUserIds
    *   List of warehouse user IDs if deemed appropriate to apply a filter -
    *   won't be useful if the list of user IDs is too long.
@@ -61,14 +63,19 @@ class IndiciaUtils {
    * @return array
    *   List of record data.
    */
-  public static function getRecordsFromTracking($tracking, array $warehouseUserIds) {
+  public static function getRecordsFromTracking($tracking, $surveyIds, array $warehouseUserIds) {
     \iform_load_helpers(['report_helper']);
     $conn = \iform_get_connection_details();
     $readAuth = \helper_base::get_read_auth($conn['website_id'], $conn['password']);
-    $tracking = $tracking ?? 0;
+    if (!$tracking) {
+      throw new \Exception('Tracking value not set');
+    }
     $params = ['tracking_from' => $tracking + 1];
     if (!empty($warehouseUserIds)) {
       $params['created_by_id_list'] = implode(',', $warehouseUserIds);
+    }
+    if (!empty($surveyIds)) {
+      $params['survey_list'] = implode(',', $surveyIds);
     }
     $options = [
       'dataSource' => 'library/occurrences/filterable_remote_system_occurrences',

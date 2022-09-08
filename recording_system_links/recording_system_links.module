@@ -65,6 +65,20 @@ function recording_system_links_iform_after_submit(array $submission, $op, $resp
     if (count($links) === 0) {
       return;
     };
+    if (isset($submission['fields']['survey_id'])) {
+      // Don't want to do anything if none of the links configured to include this survey ID.
+      $thisSurveyId = $submission['fields']['survey_id']['value'];
+      $needThisSurvey = FALSE;
+      foreach ($links as $link) {
+        if (empty($link->survey_ids) || in_array($thisSurveyId, explode(',', $link->survey_ids))) {
+          $needThisSurvey = TRUE;
+          break;
+        }
+      }
+      if (!$needThisSurvey) {
+        return;
+      }
+    }
     $records = IndiciaUtils::getRecordsForSample($response['outer_id']);
     if (count($records) === 0) {
       return;
@@ -103,8 +117,19 @@ function recording_system_links_cron() {
     $utils->setCurrentTrackingOnLinks($links);
     return;
   }
+  $surveyIds = [];
+  foreach ($links as $link) {
+    if (empty($link->survey_ids)) {
+      $surveyIds = NULL;
+      break;
+    }
+    else {
+      $surveyIds = array_merge($surveyIds, explode(',', $link->survey_ids));
+    }
+  }
+  $surveyIds = $surveyIds === NULL ? NULL : array_unique($surveyIds);
 
-  $records = IndiciaUtils::getRecordsFromTracking($tracking, /*$surveyIds, */$warehouseUserIds);
+  $records = IndiciaUtils::getRecordsFromTracking($tracking, $surveyIds, $warehouseUserIds);
   if (count($records) === 0) {
     // Wind forward to the current tracking value.
     $utils->setCurrentTrackingOnLinks($links, $currentMaxTracking);

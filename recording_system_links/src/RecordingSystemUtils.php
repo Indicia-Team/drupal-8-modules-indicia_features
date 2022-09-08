@@ -127,6 +127,7 @@ class RecordingSystemUtils {
     // Use addField to ensure correct aliases.
     $query->addField('rsc', 'id', 'id');
     $query->addField('rsc', 'title', 'title');
+    $query->addField('rsc', 'survey_ids', 'survey_ids');
     $query->addField('rsc', 'api_provider', 'api_provider');
     $query->addField('rsc', 'oauth2_url', 'oauth2_url');
     $query->addField('rsc', 'client_id', 'client_id');
@@ -140,6 +141,7 @@ class RecordingSystemUtils {
     }
     $query->groupBy('id');
     $query->groupBy('title');
+    $query->groupBy('survey_ids');
     $query->groupBy('api_provider');
     $query->groupBy('oauth2_url');
     $query->groupBy('client_id');
@@ -287,7 +289,12 @@ class RecordingSystemUtils {
           // turned on for this link since last cron run.
           continue;
         }
-        // @todo Other filtering, e.g. survey ID.
+        // Link may also be survey ID filtered.
+        if (!empty($link->survey_ids)) {
+          if (!in_array($record['survey_id'], explode(',', $link->survey_ids))) {
+            continue;
+          }
+        }
         $tokens = $this->getOauth2TokensForRecord($link, $record);
         if ($tokens === NULL) {
           // Record creator not connected to this link.
@@ -393,7 +400,6 @@ class RecordingSystemUtils {
     else {
       $parts = explode("\r\n\r\n", $rawResponse);
       $responseBody = array_pop($parts);
-      // @todo Error handling.
       $authObj = json_decode($responseBody);
       // Store the access token and refresh token in the
       // recording_system_oauth_tokens table.
@@ -419,7 +425,6 @@ class RecordingSystemUtils {
           ] + $tokens)
           ->execute();
       }
-      // @todo Ensure these tokens are passed back to cached tokens for each user.
       return $tokens;
     }
   }

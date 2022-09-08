@@ -85,6 +85,7 @@ class LinkSettingsForm extends FormBase {
         'oauth2_url' => '',
         'client_id' => '',
         'api_provider' => '',
+        'survey_ids' => '',
         'trigger_on_hooks' => 0,
         'trigger_on_cron' => 0,
         'trigger_historic_on_link' => 0,
@@ -148,6 +149,12 @@ class LinkSettingsForm extends FormBase {
       '#options' => $providerOptions,
       '#description' => $this->t('System providing the API, defines how the API calls to submit an occurrence work. Other providers may be added in future.'),
       '#required' => TRUE,
+    ];
+    $form['survey_ids'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Survey dataset IDs'),
+      '#default_value' => $link['survey_ids'],
+      '#description' => $this->t('Comma-separated list of survey IDs to limit this link to.'),
     ];
     $form['trigger_on_hooks'] = [
       '#type' => 'radios',
@@ -261,6 +268,15 @@ class LinkSettingsForm extends FormBase {
         );
       }
     }
+    $surveyIds = str_replace(' ', '', $formValues['survey_ids']);
+    if (!empty($surveyIds)) {
+      if (!preg_match('/^\d+(,\d+)*$/', $surveyIds)) {
+        $form_state->setErrorByName(
+          'survey_ids',
+          $this->t('Survey IDs must be a comma-separated list of numeric IDs.')
+        );
+      }
+    }
   }
 
   /**
@@ -276,14 +292,18 @@ class LinkSettingsForm extends FormBase {
       'oauth2_url' => $formValues['oauth2_url'],
       'client_id' => $formValues['client_id'],
       'api_provider' => $formValues['api_provider'],
+      'survey_ids' => str_replace(' ', '', $formValues['survey_ids']),
       'trigger_on_hooks' => $formValues['trigger_on_hooks'],
       'trigger_on_cron' => $formValues['trigger_on_cron'],
       'trigger_historic_on_link' => $formValues['trigger_historic_on_link'],
       'lookups' => $formValues['lookups'],
       'changed' => time(),
       'changed_by' => time(),
-      'tracking' => $formValues['tracking'],
     ];
+    // Tracking won't be updated for existing with trigger_on_cron set.
+    if (isset($formValues['tracking'])) {
+      $values['tracking'] = $formValues['tracking'];
+    }
     $userId = \Drupal::currentUser()->id();
     // Save the link with appropriate metadata.
     if (empty($formValues['id'])) {
