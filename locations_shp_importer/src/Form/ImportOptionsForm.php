@@ -99,19 +99,33 @@ class ImportOptionsForm extends FormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Existing sites'),
     ];
-    $form['existing_fieldset']['existing_instruct'] = [
-      '#markup' => $existingInstruct,
-    ];
-    $form['existing_fieldset']['existing'] = [
-      '#title' => $this->t('Behaviour for existing locations with same name and code'),
-      '#type' => 'radios',
-      '#options' => [
-        'ignore_new' => $this->t('Ignore the new location.<p>Select this if your shp file upload has multiple site boundaries, and the duplicate site is not a replacement.</p>'),
-        'update_boundary' => $this->t('Update the existing location with the imported location boundary.<p>Select this if the duplicate site boundary is an update to an existing site.</p>'),
-        'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.<p>Select this if the site boundary is a duplicate, but you wish to keep it as separate/unique to the original - not recommended.</p>'),
-      ],
-      '#required' => TRUE,
-    ];
+    $duplicateOptions = $this->getDuplicateHandlingOptions();
+    if (count($duplicateOptions) > 1) {
+      $form['existing_fieldset']['existing_instruct'] = [
+        '#markup' => $existingInstruct,
+      ];
+      $form['existing_fieldset']['existing'] = [
+        '#title' => $this->t('Behaviour for existing locations with same name and code'),
+        '#type' => 'radios',
+        '#options' => $this->getDuplicateHandlingOptions(),
+        '#required' => TRUE,
+      ];
+    }
+    else {
+      // Only 1 possible option for duplicate handling, so output the option
+      // value as a hidden.
+      $form['existing_fieldset']['existing'] = [
+        '#type' => 'hidden',
+        '#value' => array_keys($duplicateOptions)[0],
+      ];
+      $optionDescription = array_values($duplicateOptions)[0];
+      // Label doesn't need the additional information in the following
+      // paragraph.
+      $label = explode('<p>', $optionDescription)[0];
+      $form['existing_fieldset']['existing_info'] = [
+        '#markup' => '<p>' . $this->t('Locations will be imported using the following method of handling duplicates') . ':</p><p class="alert alert-info">' . $label . '</p>',
+      ];
+    }
     $form['multiple_fieldset'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Multiple polygons'),
@@ -173,6 +187,26 @@ class ImportOptionsForm extends FormBase {
       $locationTypes[$type['id']] = $type['term'];
     }
     return $locationTypes;
+  }
+
+  /**
+   * Retrieve the options available for handling duplicates, as per config.
+   *
+   * @return array
+   *   Associative array of options.
+   */
+  private function getDuplicateHandlingOptions() {
+    $options = [
+      'ignore_new' => $this->t('Ignore the new location.') . '<p>' . $this->t('Select this if your shp file upload has multiple site boundaries, and the duplicate site is not a replacement.') . '</p>',
+      'update_boundary' => $this->t('Update the existing location with the imported location boundary.') . '<p>' . $this->t('Select this if the duplicate site boundary is an update to an existing site.') . '</p>',
+      'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.') . '<p>' . $this->t('Select this if the site boundary is a duplicate, but you wish to keep it as separate/unique to the original - not recommended.') . '</p>',
+    ];
+    $config = $this->config('locations_shp_importer.settings');
+    $existingOptions = $config->get('existing_options');
+    if ($existingOptions) {
+      $options = array_intersect_key($options, array_combine(array_values($existingOptions), array_values($existingOptions)));
+    }
+    return $options;
   }
 
   /**
