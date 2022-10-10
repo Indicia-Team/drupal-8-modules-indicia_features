@@ -222,11 +222,23 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
     }
   }
   elseif (isset($response->possibleMatches)) {
-    $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
-    $_SESSION['uid_to_resolve'] = $account->id();
-    // Do not use host_goto_page() within a hook.
-    $request = \Drupal::request();
-    $request->query->set('destination', 'easy_login/resolve_multiple_users');
+    if ($account->id() == Drupal::currentUser()->id()) {
+      // The user is editing their own account and can resolve this.
+      $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
+      $_SESSION['uid_to_resolve'] = $account->id();
+      // Do not use host_goto_page() within a hook.
+      $request = \Drupal::request();
+      $request->query->set('destination', 'easy_login/resolve_multiple_users');
+    }
+    else {
+        // Alert the person editing the account to the problem.
+        \Drupal::messenger()->addWarning(t(
+          'There appear to be several existing users on the central records
+          database for %username. They need to log in to this website to
+          resolve the issue.',
+          ['%username' => $account->getDisplayName(),]
+        ));
+    }
   }
   elseif (isset($response->error)) {
     \Drupal::messenger()->addWarning($response->error);
