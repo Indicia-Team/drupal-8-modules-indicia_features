@@ -224,7 +224,9 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
   elseif (isset($response->possibleMatches)) {
     $_SESSION['multiple_users_to_resolve'] = $response->possibleMatches;
     $_SESSION['uid_to_resolve'] = $account->id();
-    hostsite_goto_page('easy_login/resolve_multiple_users');
+    // Do not use host_goto_page() within a hook.
+    $request = \Drupal::request();
+    $request->query->set('destination', 'easy_login/resolve_multiple_users');
   }
   elseif (isset($response->error)) {
     \Drupal::messenger()->addWarning($response->error);
