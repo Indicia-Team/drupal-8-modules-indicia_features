@@ -73,9 +73,9 @@ class ImportForm extends FormBase {
         $this->messenger()->addError($this->t('The files must be in the root of the zip file, not in a sub-folder.'));
         return;
       }
-      $tokens = explode('.', $file);
-      $ext = array_pop($tokens);
-      $filename = implode('.', $tokens);
+      $tokens = explode('.', $file, 2);
+      $filename = $tokens[0];
+      $ext = $tokens[1];
       if (!$firstFilename) {
         $firstFilename = $filename;
       }
