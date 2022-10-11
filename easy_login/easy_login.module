@@ -200,9 +200,10 @@ function easy_login_call_get_user_id(
   $auth = data_entry_helper::get_read_write_auth(
     $config->get('website_id'), $config->get('password')
   );
-  $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' .
-    $auth['write_tokens']['auth_token'];
-  $postargs = 'surname=' . urlencode($account->field_last_name->value) . '&identifiers=' . $identifiers;
+  $url .= '?nonce=' . $auth['write_tokens']['nonce'];
+  $url .= '&auth_token=' . $auth['write_tokens']['auth_token'];
+  $postargs = 'surname=' . urlencode($account->field_last_name->value);
+  $postargs .= '&identifiers=' . $identifiers;
   if (!empty($account->field_indicia_user_id->value))
     $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
   if (count($fieldsToSyncByCaption))
@@ -341,7 +342,8 @@ function build_fields_to_sync_by_caption_array(
   $fieldsToSyncByCaption,
   $fieldsToSync
 ) {
-  $query = $database->query("select ".$fieldName.'_value'." from ".'user__'.$fieldName."");
+  $sql = 'select ' . $fieldName . '_value from user__' . $fieldName;
+  $query = $database->query($sql);
   $r = $query->fetchAll();
   $fieldConfig = $account->get($fieldName)->getFieldDefinition()->getConfig('the_bundle');
   $label = $fieldConfig->getLabel();
@@ -380,13 +382,15 @@ function easy_login_move_form_data_into_account($account) {
 function call_warehouse_user_delete($account) {
   iform_load_helpers(['data_entry_helper']);
   if (!empty($account->field_indicia_user_id->value)) {
-    $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/delete_user';
+    $url = data_entry_helper::$base_url;
+    $url .= 'index.php/services/user_identifier/delete_user';
+
     $config = \Drupal::config('iform.settings');
     $auth = data_entry_helper::get_read_write_auth(
       $config->get('website_id'), $config->get('password')
     );
-    $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' .
-      $auth['write_tokens']['auth_token'];
+    $url .= '?nonce=' . $auth['write_tokens']['nonce'];
+    $url .= '&auth_token=' . $auth['write_tokens']['auth_token'];
     $postargs = 'warehouse_user_id=' . $account->field_indicia_user_id->value;
     $postargs .= '&website_id_for_user_deletion=' . $config->get('website_id');
 
