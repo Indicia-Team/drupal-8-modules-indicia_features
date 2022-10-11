@@ -10,15 +10,22 @@ use \Drupal\Core\Form\FormStateInterface;
  */
 function easy_login_user_login(UserInterface $account) {
   if (empty($account->field_last_name->value)) {
-    \Drupal::messenger()->addMessage(t('Please set at least your last name on your @account. ' .
-       'This will allow your user registration to be linked properly to the central database of records.',
-        array('@account' => Link::fromTextAndUrl('user account', $account->toUrl('edit-form'))->toString())
+    \Drupal::messenger()->addMessage(t(
+      'Please set at least your last name on your @account. This will allow your
+      user registration to be linked properly to the central database of
+      records.',
+      ['@account' => Link::fromTextAndUrl('user account', $account->toUrl('edit-form'))->toString()]
     ));
     return;
   }
-  elseif ($account->access->value !== 0 && !empty($account->field_indicia_user_id->value))
-    // if not first login and we know our indicia user ID, then there is nothing more to do
+  elseif (
+    $account->access->value !== 0 &&
+    !empty($account->field_indicia_user_id->value)
+  ) {
+    // If not first login and we know our indicia user ID, then there is nothing
+    // more to do.
     return;
+  }
   else {
     easy_login_synchronise_account_to_warehouse($account);
     $response = easy_login_call_get_user_id($account);
@@ -32,7 +39,11 @@ function easy_login_user_login(UserInterface $account) {
  * @param EntityInterface $account User account
  */
 function easy_login_user_presave(EntityInterface $account) {
-  if ($account->isActive() && $account->id() && empty($account->field_indicia_user_id->value)) {
+  if (
+    $account->isActive() &&
+    $account->id() &&
+    empty($account->field_indicia_user_id->value)
+  ) {
     $response = easy_login_call_get_user_id($account);
     easy_login_handle_get_user_id_response($account, $response, FALSE);
   }
@@ -41,11 +52,21 @@ function easy_login_user_presave(EntityInterface $account) {
 /**
  * Hide user preferences fields from registration form or if config incomplete.
  */
-function easy_login_form_user_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id === 'user_register_form' || !hostsite_get_config_value('iform', 'master_checklist_id', 0)) {
+function easy_login_form_user_form_alter(
+  &$form,
+  FormStateInterface $form_state,
+  $form_id
+) {
+  if (
+    $form_id === 'user_register_form' ||
+    !hostsite_get_config_value('iform', 'master_checklist_id', 0)
+  ) {
     unset($form['field_taxon_groups']);
   }
-  if ($form_id === 'user_register_form' || !hostsite_get_config_value('iform', 'profile_location_type_id', 0)) {
+  if (
+    $form_id === 'user_register_form' ||
+    !hostsite_get_config_value('iform', 'profile_location_type_id', 0)
+  ) {
     unset($form['field_location']);
   }
   $form['#attached']['library'][] = 'easy_login/user-form';
@@ -101,8 +122,9 @@ function easy_login_allowed_taxon_groups() {
     iform_load_helpers(['data_entry_helper']);
     $conn = iform_get_connection_details();
     $readAuth = data_entry_helper::get_read_auth($conn['website_id'], $conn['password']);
-    // Load the list of taxon groups. If we have a master list setting for the site, use this to ensure we only pick up
-    // groups that are in use on the site.
+    // Load the list of taxon groups. If we have a master list setting for the
+    // site, use this to ensure we only pick up groups that are in use on the
+    // site.
     $response = data_entry_helper::get_population_data([
       'report' => 'library/taxon_groups/taxon_groups_used_in_checklist',
       'extraParams' => $readAuth + array('taxon_list_id' => $checklistId),
@@ -161,26 +183,34 @@ function easy_login_allowed_locations() {
  * @return string
  *   Response from call to get_user_id.
  */
-function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = NULL, $fieldsToSyncByCaption = []) {
+function easy_login_call_get_user_id(
+  $account,
+  $force = NULL,
+  $users_to_merge = NULL,
+  $fieldsToSyncByCaption = []
+) {
   if (empty($account->field_last_name->value)) {
     return;
   }
   iform_load_helpers(['data_entry_helper']);
-  $url = data_entry_helper::$base_url.'index.php/services/user_identifier/get_user_id';
-  $identifiers = array(array('type'=>'email','identifier'=>$account->getEmail()));
+  $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/get_user_id';
+  $identifiers = [['type' => 'email', 'identifier' => $account->getEmail()]];
   $identifiers = urlencode(json_encode($identifiers));
   $config = \Drupal::config('iform.settings');
-  $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
-  $url .= '?nonce='.$auth['write_tokens']['nonce'].'&auth_token='.$auth['write_tokens']['auth_token'];
-  $postargs = 'surname='.urlencode($account->field_last_name->value).'&identifiers='.$identifiers;
+  $auth = data_entry_helper::get_read_write_auth(
+    $config->get('website_id'), $config->get('password')
+  );
+  $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' .
+    $auth['write_tokens']['auth_token'];
+  $postargs = 'surname=' . urlencode($account->field_last_name->value) . '&identifiers=' . $identifiers;
   if (!empty($account->field_indicia_user_id->value))
     $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
   if (count($fieldsToSyncByCaption))
-    $postargs .= '&attribute_values='.urlencode(json_encode($fieldsToSyncByCaption));
+    $postargs .= '&attribute_values=' . urlencode(json_encode($fieldsToSyncByCaption));
   if (!empty($account->field_first_name->value))
-    $postargs .= '&first_name='.urlencode($account->field_first_name->value);
+    $postargs .= '&first_name=' . urlencode($account->field_first_name->value);
   if ($force && ($force==='merge' || $force==='split')) {
-    $postargs .= '&force='.$force;
+    $postargs .= '&force=' . $force;
     // We are definitely doing something on the server, so can inform the user
     \Drupal::messenger()->addMessage(t('Your user information has been updated.'));
   }
@@ -188,7 +218,7 @@ function easy_login_call_get_user_id($account, $force = NULL, $users_to_merge = 
   if (isset($account->field_record_privacy) && $account->field_record_privacy)
     $postargs .= 'reporting,peer_review,verification,data_flow,moderation';
   if ($users_to_merge)
-    $postargs .= '&user_to_merge='.urlencode(json_encode($users_to_merge));
+    $postargs .= '&user_to_merge=' . urlencode(json_encode($users_to_merge));
   $response = data_entry_helper::http_post($url, $postargs);
   return $response['output'];
 }
@@ -210,10 +240,12 @@ function easy_login_handle_get_user_id_response($account, $response, $save) {
     if ($isEmpty || $account->field_indicia_user_id->value != $response->userId) {
       // @todo: no need for these messages during registration
       if ($isEmpty) {
-        \Drupal::messenger()->addMessage(t('Your user account is now linked to the central records database.'));
+        \Drupal::messenger()->addMessage(t('Your user account is now linked to
+        the central records database.'));
       }
       else {
-        \Drupal::messenger()->addMessage(t('Your user account link to the central records database has been updated.'));
+        \Drupal::messenger()->addMessage(t('Your user account link to the
+        central records database has been updated.'));
       }
       $account->field_indicia_user_id->setValue($response->userId);
       if ($save) {
@@ -256,9 +288,11 @@ function easy_login_synchronise_account_to_warehouse($account) {
       else {
         $value = '';
       }
-      // Note: there used to be an if statement around this field to make sure it was previously empty or had changed before doing a sync.
-      // This does not work in the situation where a user registers and is then activated, as the first sync should occur at activation
-      // when actually a field might of been filled at registration and won't have changed.
+      // Note: there used to be an if statement around this field to make sure
+      // it was previously empty or had changed before doing a sync.
+      // This does not work in the situation where a user registers and is then
+      // activated, as the first sync should occur at activation when actually a
+      // field might of been filled at registration and won't have changed.
       $fieldsToSync[$field] = $value;
     }
   }
@@ -267,7 +301,9 @@ function easy_login_synchronise_account_to_warehouse($account) {
     // the captions and convert the array.
     $database = \Drupal::database();
     foreach ($fieldsToSync as $fieldName => $newValue) {
-      $fieldsToSyncByCaption = build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync);
+      $fieldsToSyncByCaption = build_fields_to_sync_by_caption_array(
+        $database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync
+      );
     }
   }
   if ($account->uid->value === \Drupal::currentUser()->id()) {
@@ -285,8 +321,11 @@ function easy_login_synchronise_account_to_warehouse($account) {
     }
     if (!empty($requests)) {
       global $base_url;
-      \Drupal::messenger()->addMessage(t('Why not tell us '.implode(' ' . t('and') . ' ', $requests) . ' to help us tailor the system to your needs? ' .
-          'You can fill this information in on your '.'<a href="' . $base_url . '/'.'user/' . $account->uid->value . '/edit'.'">user preferences</a>' . '.'
+      \Drupal::messenger()->addMessage(t('Why not tell us ' .
+        implode(' ' . t('and') . ' ', $requests) . 
+        ' to help us tailor the system to your needs? ' .
+        'You can fill this information in on your <a href="' . $base_url . 
+        '/user/' . $account->uid->value . '/edit">user preferences</a>.'
       ));
     }
   }
@@ -295,12 +334,19 @@ function easy_login_synchronise_account_to_warehouse($account) {
   easy_login_handle_get_user_id_response($account, $response, FALSE);
 }
 
-function build_fields_to_sync_by_caption_array($database, $account, $fieldName, $fieldsToSyncByCaption, $fieldsToSync) {
+function build_fields_to_sync_by_caption_array(
+  $database,
+  $account,
+  $fieldName,
+  $fieldsToSyncByCaption,
+  $fieldsToSync
+) {
   $query = $database->query("select ".$fieldName.'_value'." from ".'user__'.$fieldName."");
   $r = $query->fetchAll();
   $fieldConfig = $account->get($fieldName)->getFieldDefinition()->getConfig('the_bundle');
   $label = $fieldConfig->getLabel();
-  // Create an array of values to sync using the caption as array key instead of the field name
+  // Create an array of values to sync using the caption as array key instead of
+  // the field name
   $fieldsToSyncByCaption[$label] = $fieldsToSync[$fieldName];
   return $fieldsToSyncByCaption;
 }
@@ -336,10 +382,14 @@ function call_warehouse_user_delete($account) {
   if (!empty($account->field_indicia_user_id->value)) {
     $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/delete_user';
     $config = \Drupal::config('iform.settings');
-    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
-    $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' . $auth['write_tokens']['auth_token'];
+    $auth = data_entry_helper::get_read_write_auth(
+      $config->get('website_id'), $config->get('password')
+    );
+    $url .= '?nonce=' . $auth['write_tokens']['nonce'] . '&auth_token=' .
+      $auth['write_tokens']['auth_token'];
     $postargs = 'warehouse_user_id=' . $account->field_indicia_user_id->value;
     $postargs .= '&website_id_for_user_deletion=' . $config->get('website_id');
+
     $response = data_entry_helper::http_post($url, $postargs);
     return $response['output'];
   }
@@ -355,10 +405,17 @@ function clear_indicia_fields_synced_to_warehouse($account) {
   iform_load_helpers(['data_entry_helper']);
   if (!empty($account->field_indicia_user_id->value)) {
     $config = \Drupal::config('iform.settings');
-    $auth = data_entry_helper::get_read_write_auth($config->get('website_id'), $config->get('password'));
+    $auth = data_entry_helper::get_read_write_auth(
+      $config->get('website_id'), $config->get('password')
+    );
+
     foreach ($account as $fieldName => &$def) {
       // Need to check for field_indicia as we only want to clear synced fields.
-      if (strpos($fieldName, 'field_indicia') !== FALSE && isset($def) && $fieldName !== 'field_indicia_user_id') {
+      if (
+        strpos($fieldName, 'field_indicia') !== FALSE &&
+        isset($def) &&
+        $fieldName !== 'field_indicia_user_id'
+      ) {
         $def->value = '';
       }
     }
