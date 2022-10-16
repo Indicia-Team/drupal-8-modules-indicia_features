@@ -53,11 +53,11 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
       ],
     ]);
     $template = <<<HTML
-<div id="indicia-es-totals-block-container" class="row">
-  <div class="col-sm-3"><div class="count occurrences"><i class="fas fa-map-marker-alt"></i></div></div>
-  <div class="col-sm-3"><div class="count species"><i class="fas fa-sitemap"></i></div></div>
-  <div class="col-sm-3"><div class="count photos"><i class="fas fa-camera"></i></div></div>
-  <div class="col-sm-3"><div class="count recorders"><i class="fas fa-user-friends"></i></div></div>
+<div id="indicia-es-totals-block-container">
+  <div><div class="count occurrences"><i class="fas fa-map-marker-alt"></i></div></div>
+  <div><div class="count species"><i class="fas fa-sitemap"></i></div></div>
+  <div><div class="count photos"><i class="fas fa-camera"></i></div></div>
+  <div><div class="count recorders"><i class="fas fa-user-friends"></i></div></div>
 </div>
 
 HTML;
