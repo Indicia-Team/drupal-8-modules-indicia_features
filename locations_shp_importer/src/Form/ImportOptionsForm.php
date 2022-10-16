@@ -151,6 +151,11 @@ class ImportOptionsForm extends FormBase {
       '#empty_option' => $this->t('- Please select -'),
       '#required' => TRUE,
     ];
+    $form['notice'] = [
+      '#markup' => '<div class="alert alert-info">' .
+        $this->t('If you are importing multiple locations, please note that they may take a few minutes to import.') .
+        '</div>',
+    ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Create locations'),
