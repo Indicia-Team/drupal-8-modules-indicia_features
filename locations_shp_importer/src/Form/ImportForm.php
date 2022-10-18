@@ -89,6 +89,7 @@ class ImportForm extends FormBase {
         }
       }
       $exts[] = strtolower($ext);
+      $extsUppercase = strtolower($ext) !== $ext;
     }
     if (!in_array('dbf', $exts) || !in_array('shp', $exts)) {
       $this->messenger()->addError($this->t('There is a problem with the Zipped SHP file you uploaded. The *.zip file must contain at least a *.shp and *.dbf file in order to be imported as a valid SHP file set.'));
@@ -99,6 +100,7 @@ class ImportForm extends FormBase {
     $form_state->setRedirect('locations_shp_importer.import_options', [
       'path' => $directory,
       'file' => $firstFilename,
+      'extscase' => $extsUppercase ? 'upper' : 'lower',
     ]);
   }
 

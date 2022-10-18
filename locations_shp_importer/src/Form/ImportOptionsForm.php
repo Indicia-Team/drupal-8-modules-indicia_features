@@ -38,11 +38,12 @@ class ImportOptionsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $path = NULL, $file = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $path = NULL, $file = NULL, $extscase = 'lower') {
     $form = [];
     $basefile = \Drupal::service('file_system')->realpath("public://locations_shp_importer/$path") . DIRECTORY_SEPARATOR . $file;
+    $dbfExt = $extscase === 'upper' ? 'DBF' : 'dbf';
     try {
-      $dBaseTable = new Table("$basefile.dbf");
+      $dBaseTable = new Table("$basefile.$dbfExt");
     }
     catch (\Exception $e) {
       $this->messenger()->addError($this->t('Unable to open DBF file.'));
@@ -67,6 +68,10 @@ class ImportOptionsForm extends FormBase {
     $form['basefile'] = [
       '#type' => 'hidden',
       '#value' => $basefile,
+    ];
+    $form['extscase'] = [
+      '#type' => 'hidden',
+      '#value' => $extscase,
     ];
     // @todo List of options more comprehensive, or use Indicia settings.
     $form['srid'] = [
@@ -152,8 +157,8 @@ class ImportOptionsForm extends FormBase {
       '#required' => TRUE,
     ];
     $form['notice'] = [
-      '#markup' => '<div class="alert alert-info">' .
-        $this->t('If you are importing multiple locations, please note that they may take a few minutes to import.') .
+      '#markup' => '<div class="alert alert-warning">' .
+        $this->t('If you are importing multiple locations, please note that they may take a few minutes to import. If you need to import more than around 50 boundaries at a time then please separate them into several SHP file sets.') .
         '</div>',
     ];
     $form['submit'] = [
@@ -223,7 +228,8 @@ class ImportOptionsForm extends FormBase {
     $options = $form_state->cleanValues()->getValues();
     $conn = iform_get_connection_details();
     $auth = \helper_base::get_read_write_auth($conn['website_id'], $conn['password']);
-    if (!file_exists("$options[basefile].dbf")) {
+    $dbfExt = $options['extscase'] === 'upper' ? 'DBF' : 'dbf';
+    if (!file_exists("$options[basefile].$dbfExt")) {
       $this->messenger()->addError('dBase file not found');
       return;
     }
@@ -313,8 +319,10 @@ class ImportOptionsForm extends FormBase {
    *   Form options.
    */
   private function getNameCodeCombinationsFromImport(array $options) {
+    $dbfExt = $options['extscase'] === 'upper' ? 'DBF' : 'dbf';
+    $shpExt = $options['extscase'] === 'upper' ? 'SHP' : 'shp';
     try {
-      $dBaseTable = new Table("$options[basefile].dbf");
+      $dBaseTable = new Table("$options[basefile].$dbfExt");
     }
     catch (\Exception $e) {
       $this->messenger()->addError('Could not open dBase file');
@@ -322,7 +330,7 @@ class ImportOptionsForm extends FormBase {
       return;
     }
     // Read next polygon.
-    $handle = fopen("$options[basefile].shp", 'rb');
+    $handle = fopen("$options[basefile].$shpExt", 'rb');
     $this->nameCodeCombinations = [];
     // Don't care about file header: jump direct to records.
     fseek($handle, 100, SEEK_SET);
