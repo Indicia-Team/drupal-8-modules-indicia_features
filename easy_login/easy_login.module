@@ -135,9 +135,8 @@ function easy_login_allowed_taxon_groups() {
     }
     return $groups;
   }
-  else {
-    return [];
-  }
+  // Needs to return something otherwise crashes Layout Builder.
+  return [t('None available')];
 }
 
 /**
@@ -166,7 +165,8 @@ function easy_login_allowed_locations() {
     }
     return $locations;
   }
-  return [];
+  // Needs to return something otherwise crashes Layout Builder.
+  return [t('None available')];
 }
 
 /**
@@ -323,9 +323,9 @@ function easy_login_synchronise_account_to_warehouse($account) {
     if (!empty($requests)) {
       global $base_url;
       \Drupal::messenger()->addMessage(t('Why not tell us ' .
-        implode(' ' . t('and') . ' ', $requests) . 
+        implode(' ' . t('and') . ' ', $requests) .
         ' to help us tailor the system to your needs? ' .
-        'You can fill this information in on your <a href="' . $base_url . 
+        'You can fill this information in on your <a href="' . $base_url .
         '/user/' . $account->uid->value . '/edit">user preferences</a>.'
       ));
     }
