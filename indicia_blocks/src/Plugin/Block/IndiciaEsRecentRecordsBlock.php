@@ -74,6 +74,8 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       'id',
       'taxon.accepted_name',
       'taxon.vernacular_name',
+      'taxon.taxon_rank',
+      'taxon.taxon_rank_sort_order',
       'event.date_start',
       'event.date_end',
       'event.recorded_by',

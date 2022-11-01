@@ -28,6 +28,7 @@ class IndiciaEsRecentRecordsMapBlock extends IndiciaBlockBase {
           'title' => $this->t('Recent records'),
           'source' => 'src-IndiciaEsRecentRecordsBlock',
           'forceEnabled' => TRUE,
+          'labels' => 'hover',
         ],
       ],
     ]);
