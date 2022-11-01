@@ -40,6 +40,13 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['unverified_records']) ? $config['unverified_records'] : 0,
     ];
 
+    $form['limit_to_user'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Limit to current user's records"),
+      '#description' => $this->t('If ticked, only records for the current user are shown.'),
+      '#default_value' => isset($config['limit_to_user']) ? $config['limit_to_user'] : 0,
+    ];
+
     return $form;
   }
 
@@ -51,6 +58,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     // Save our custom settings when the form is submitted.
     $this->setConfigurationValue('sensitive_records', $form_state->getValue('sensitive_records'));
     $this->setConfigurationValue('unverified_records', $form_state->getValue('unverified_records'));
+    $this->setConfigurationValue('limit_to_user', $form_state->getValue('limit_to_user'));
   }
 
   /**
@@ -109,12 +117,23 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
         'value' => 'false',
       ];
     }
-    // Other record filters.
     if (empty($config['unverified_records'])) {
       $options['filterBoolClauses']['must'][] = [
         'query_type' => 'term',
         'field' => 'identification.verification_status',
         'value' => 'V',
+      ];
+    }
+    if (!empty($config['limit_to_user'])) {
+      $warehouseUserId = $this->getWarehouseUserId();
+      if (empty($warehouseUserId)) {
+        // Not linked to the warehouse so force report to be blank.
+        $warehouseUserId = -9999;
+      }
+      $options['filterBoolClauses']['must'][] = [
+        'query_type' => 'term',
+        'field' => 'metadata.created_by_id',
+        'value' => $warehouseUserId,
       ];
     }
 

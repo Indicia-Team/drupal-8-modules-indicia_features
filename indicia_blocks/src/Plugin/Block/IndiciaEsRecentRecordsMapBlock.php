@@ -2,7 +2,6 @@
 
 namespace Drupal\indicia_blocks\Plugin\Block;
 
-use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Render\Markup;
 
 /**
@@ -54,4 +53,5 @@ class IndiciaEsRecentRecordsMapBlock extends IndiciaBlockBase {
   public function getCacheMaxAge() {
     return 0;
   }
+
 }
