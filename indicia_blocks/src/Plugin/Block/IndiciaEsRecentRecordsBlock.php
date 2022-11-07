@@ -47,6 +47,13 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['limit_to_user']) ? $config['limit_to_user'] : 0,
     ];
 
+    $form['cache_timeout'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Cache timeout'),
+      '#description' => $this->t('Minimum number of seconds that the data request will be cached for, resulting in faster loads times.'),
+      '#default_value' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
+    ];
+
     return $form;
   }
 
@@ -59,6 +66,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     $this->setConfigurationValue('sensitive_records', $form_state->getValue('sensitive_records'));
     $this->setConfigurationValue('unverified_records', $form_state->getValue('unverified_records'));
     $this->setConfigurationValue('limit_to_user', $form_state->getValue('limit_to_user'));
+    $this->setConfigurationValue('cache_timeout', $form_state->getValue('cache_timeout'));
   }
 
   /**
@@ -87,7 +95,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     $options = [
       'id' => 'src-IndiciaEsRecentRecordsBlock',
       'size' => 10,
-      'proxyCacheTimeout' => 300,
+      'proxyCacheTimeout' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
       'filterPath' => $filterPath,
       'initialMapBounds' => TRUE,
       'sort' => ['id' => 'desc'],

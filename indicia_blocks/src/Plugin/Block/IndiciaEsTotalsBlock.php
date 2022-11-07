@@ -31,6 +31,13 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['limit_to_user']) ? $config['limit_to_user'] : 0,
     ];
 
+    $form['cache_timeout'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Cache timeout'),
+      '#description' => $this->t('Minimum number of seconds that the data request will be cached for, resulting in faster loads times.'),
+      '#default_value' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
+    ];
+
     return $form;
   }
 
@@ -41,6 +48,7 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
     parent::blockSubmit($form, $form_state);
     // Save our custom settings when the form is submitted.
     $this->setConfigurationValue('limit_to_user', $form_state->getValue('limit_to_user'));
+    $this->setConfigurationValue('cache_timeout', $form_state->getValue('cache_timeout'));
   }
 
   /**
@@ -64,7 +72,7 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
     $options = [
       'id' => 'src-IndiciaEsTotalsBlock',
       'size' => 0,
-      'proxyCacheTimeout' => 300,
+      'proxyCacheTimeout' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
       'aggregation' => [
         'species_count' => [
           'cardinality' => [
