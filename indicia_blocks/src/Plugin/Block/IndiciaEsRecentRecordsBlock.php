@@ -161,6 +161,7 @@ HTML;
       '#attached' => [
         'library' => [
           'indicia_blocks/es-blocks',
+          'iform/fancybox',
         ],
       ],
       '#cache' => [
