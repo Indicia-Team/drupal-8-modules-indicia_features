@@ -24,7 +24,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     // Retrieve existing configuration for this block.
     $config = $this->getConfiguration();
 
-    // Add a form field to the existing block configuration form.
+    // Option to exclude sensitive records.
     $form['sensitive_records'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include sensitive records'),
@@ -32,7 +32,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['sensitive_records']) ? $config['sensitive_records'] : 0,
     ];
 
-    // Add a form field to the existing block configuration form.
+    // Option to exclude unverified records.
     $form['unverified_records'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include unverified records'),
@@ -40,6 +40,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['unverified_records']) ? $config['unverified_records'] : 0,
     ];
 
+    // Option to limit to current user.
     $form['limit_to_user'] = [
       '#type' => 'checkbox',
       '#title' => $this->t("Limit to current user's records"),
@@ -179,4 +180,5 @@ HTML;
   public function getCacheMaxAge() {
     return 0;
   }
+
 }

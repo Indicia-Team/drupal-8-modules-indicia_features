@@ -24,6 +24,23 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
     // Retrieve existing configuration for this block.
     $config = $this->getConfiguration();
 
+    // Option to exclude sensitive records.
+    $form['sensitive_records'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Include sensitive records'),
+      '#description' => $this->t('Unless this box is ticked, sensitive records are completely excluded.'),
+      '#default_value' => isset($config['sensitive_records']) ? $config['sensitive_records'] : 1,
+    ];
+
+    // Option to exclude unverified records.
+    $form['unverified_records'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Include unverified records'),
+      '#description' => $this->t('Unless this box is ticked, unverified (pending) records are completely excluded.'),
+      '#default_value' => isset($config['unverified_records']) ? $config['unverified_records'] : 1,
+    ];
+
+    // Option to limit to current user.
     $form['limit_to_user'] = [
       '#type' => 'checkbox',
       '#title' => $this->t("Limit to current user's records"),
@@ -89,6 +106,21 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
         ],
       ],
     ];
+    // Other record filters.
+    if (!empty($config['sensitive_records']) && $config['sensitive_records'] === 0) {
+      $options['filterBoolClauses']['must'][] = [
+        'query_type' => 'term',
+        'field' => 'metadata.sensitive',
+        'value' => 'false',
+      ];
+    }
+    if (!empty($config['unverified_records']) && $config['unverified_records'] === 0) {
+      $options['filterBoolClauses']['must'][] = [
+        'query_type' => 'term',
+        'field' => 'identification.verification_status',
+        'value' => 'V',
+      ];
+    }
     if (!empty($config['limit_to_user'])) {
       $warehouseUserId = $this->getWarehouseUserId();
       if (empty($warehouseUserId)) {
