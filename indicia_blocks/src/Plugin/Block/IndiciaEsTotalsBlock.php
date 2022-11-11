@@ -73,9 +73,15 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
    */
   public function build() {
     iform_load_helpers(['ElasticsearchReportHelper']);
+    $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
+    if (!$enabled) {
+      global $indicia_templates;
+      return [
+        '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
+      ];
+    }
     $config = $this->getConfiguration();
     \helper_base::add_resource('fontawesome');
-    \ElasticsearchReportHelper::enableElasticsearchProxy();
     \helper_base::addLanguageStringsToJs('esTotalsBlock', [
       'speciesSingle' => '{1} species',
       'speciesMulti' => '{1} species',

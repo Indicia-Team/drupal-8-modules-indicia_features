@@ -21,7 +21,13 @@ class IndiciaEsRecentRecordsMapBlock extends IndiciaBlockBase {
    */
   public function build() {
     iform_load_helpers(['ElasticsearchReportHelper']);
-    \ElasticsearchReportHelper::enableElasticsearchProxy();
+    $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
+    if (!$enabled) {
+      global $indicia_templates;
+      return [
+        '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
+      ];
+    }
     $r = \ElasticsearchReportHelper::leafletMap([
       'layerConfig' => [
         'recent-records' => [

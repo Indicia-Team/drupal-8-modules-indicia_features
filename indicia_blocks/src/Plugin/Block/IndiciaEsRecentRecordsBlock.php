@@ -75,7 +75,13 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
    */
   public function build() {
     iform_load_helpers(['ElasticsearchReportHelper']);
-    \ElasticsearchReportHelper::enableElasticsearchProxy();
+    $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
+    if (!$enabled) {
+      global $indicia_templates;
+      return [
+        '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
+      ];
+    }
     $config = $this->getConfiguration();
     $location = hostsite_get_user_field('location');
     $groups = hostsite_get_user_field('taxon_groups', FALSE, TRUE);
