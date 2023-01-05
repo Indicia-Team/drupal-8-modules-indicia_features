@@ -22,9 +22,10 @@ function easy_login_user_login(UserInterface $account) {
     $account->access->value !== 0 &&
     !empty($account->field_indicia_user_id->value)
   ) {
-    // If not first login and we know our indicia user ID, then there is nothing
-    // more to do.
-    return;
+    // If not first login and we know our indicia user ID, still check in case
+    // a user merge done elsewhere has caused the deletion of the user ID.
+    $response = easy_login_call_get_user_id($account);
+    easy_login_handle_get_user_id_response($account, $response, TRUE);
   }
   else {
     easy_login_synchronise_account_to_warehouse($account);
@@ -227,6 +228,17 @@ function easy_login_call_get_user_id(
   }
 
   $response = data_entry_helper::http_post($url, http_build_query($postargs));
+  if ($response['result'] === FALSE) {
+    // There was an error.
+    if (strpos($response['output'], 'Error: unknown warehouse_user_id') !== false) {
+      // The previously found indicia_user_id is no longer valid. This can
+      // happen if the user was deleted due to account merging.
+      unset($postargs['warehouse_user_id']);
+      // Request an updated indicia_user_id.
+      $response = data_entry_helper::http_post($url, http_build_query($postargs));
+    }
+  }
+
   return $response['output'];
 }
 
