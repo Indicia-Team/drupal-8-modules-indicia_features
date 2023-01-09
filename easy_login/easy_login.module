@@ -22,9 +22,13 @@ function easy_login_user_login(UserInterface $account) {
     $account->access->value !== 0 &&
     !empty($account->field_indicia_user_id->value)
   ) {
-    // If not first login and we know our indicia user ID, then there is nothing
-    // more to do.
-    return;
+    // If not first login and we know our indicia user ID, still check in case
+    // a user merge done elsewhere has caused the deletion of the user ID.
+    if (!easy_login_check_user_id($account)) {
+      // Get an updated indicia user ID.
+      $response = easy_login_call_get_user_id($account);
+      easy_login_handle_get_user_id_response($account, $response, TRUE);
+    }
   }
   else {
     easy_login_synchronise_account_to_warehouse($account);
@@ -170,6 +174,44 @@ function easy_login_allowed_locations() {
 }
 
 /**
+ * Confirms a user_id is valid on the warehouse.
+ *
+ * @param object $account
+ *   User account object.
+ *
+ * @return bool
+ *   True if user_id is valid on warehouse else false.
+ */
+function easy_login_check_user_id($account) {
+  if (empty($account->field_indicia_user_id->value)) {
+    return FALSE;
+  }
+
+  iform_load_helpers(['data_entry_helper']);
+  $config = \Drupal::config('iform.settings');
+  $auth = data_entry_helper::get_read_auth(
+    $config->get('website_id'), $config->get('password')
+  );
+  $extraParams['nonce'] = $auth['nonce'];
+  $extraParams['auth_token'] = $auth['auth_token'];
+  $extraParams['id'] = $account->field_indicia_user_id->value;
+
+  $response = data_entry_helper::get_population_data([
+    'table' => 'user',
+    'extraParams' => $extraParams,
+  ]);
+  if (isset($response['error'])) {
+    // There was an error.
+    return FALSE;
+  }
+  if (count($response) === 0) {
+    // There was no user found.
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
  * Function to call the get_user_id service on the warehouse.
  *
  * @param object $account
@@ -194,33 +236,50 @@ function easy_login_call_get_user_id(
   }
   iform_load_helpers(['data_entry_helper']);
   $url = data_entry_helper::$base_url . 'index.php/services/user_identifier/get_user_id';
-  $identifiers = [['type' => 'email', 'identifier' => $account->getEmail()]];
-  $identifiers = urlencode(json_encode($identifiers));
   $config = \Drupal::config('iform.settings');
   $auth = data_entry_helper::get_read_write_auth(
     $config->get('website_id'), $config->get('password')
   );
   $url .= '?nonce=' . $auth['write_tokens']['nonce'];
   $url .= '&auth_token=' . $auth['write_tokens']['auth_token'];
-  $postargs = 'surname=' . urlencode($account->field_last_name->value);
-  $postargs .= '&identifiers=' . $identifiers;
-  if (!empty($account->field_indicia_user_id->value))
-    $postargs .= '&warehouse_user_id=' . $account->field_indicia_user_id->value;
-  if (count($fieldsToSyncByCaption))
-    $postargs .= '&attribute_values=' . urlencode(json_encode($fieldsToSyncByCaption));
-  if (!empty($account->field_first_name->value))
-    $postargs .= '&first_name=' . urlencode($account->field_first_name->value);
+
+  $postargs['surname'] = $account->field_last_name->value;
+  $identifiers = [['type' => 'email', 'identifier' => $account->getEmail()]];
+  $postargs['identifiers'] = json_encode($identifiers);
+  if (!empty($account->field_indicia_user_id->value)) {
+    $postargs['warehouse_user_id'] = $account->field_indicia_user_id->value;
+  }
+  if (count($fieldsToSyncByCaption)) {
+    $postargs['attribute_values'] = json_encode($fieldsToSyncByCaption);
+  }
+  if (!empty($account->field_first_name->value)) {
+    $postargs['first_name'] = $account->field_first_name->value;
+  }
   if ($force && ($force==='merge' || $force==='split')) {
-    $postargs .= '&force=' . $force;
+    $postargs['force'] = $force;
     // We are definitely doing something on the server, so can inform the user
     \Drupal::messenger()->addMessage(t('Your user information has been updated.'));
   }
-  $postargs .= '&shares_to_prevent=';
-  if (isset($account->field_record_privacy) && $account->field_record_privacy)
-    $postargs .= 'reporting,peer_review,verification,data_flow,moderation';
-  if ($users_to_merge)
-    $postargs .= '&user_to_merge=' . urlencode(json_encode($users_to_merge));
-  $response = data_entry_helper::http_post($url, $postargs);
+  $postargs['shares_to_prevent'] = '';
+  if (isset($account->field_record_privacy) && $account->field_record_privacy) {
+    $postargs['shares_to_prevent'] = 'reporting,peer_review,verification,data_flow,moderation';
+  }
+  if ($users_to_merge) {
+    $postargs['user_to_merge'] = json_encode($users_to_merge);
+  }
+
+  $response = data_entry_helper::http_post($url, http_build_query($postargs));
+  if ($response['result'] === FALSE) {
+    // There was an error.
+    if (strpos($response['output'], 'Error: unknown warehouse_user_id') !== false) {
+      // The previously found indicia_user_id is no longer valid. This can
+      // happen if the user was deleted due to account merging.
+      unset($postargs['warehouse_user_id']);
+      // Request an updated indicia_user_id.
+      $response = data_entry_helper::http_post($url, http_build_query($postargs));
+    }
+  }
+
   return $response['output'];
 }
 
