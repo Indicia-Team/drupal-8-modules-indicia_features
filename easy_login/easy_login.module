@@ -24,8 +24,11 @@ function easy_login_user_login(UserInterface $account) {
   ) {
     // If not first login and we know our indicia user ID, still check in case
     // a user merge done elsewhere has caused the deletion of the user ID.
-    $response = easy_login_call_get_user_id($account);
-    easy_login_handle_get_user_id_response($account, $response, TRUE);
+    if (!easy_login_check_user_id($account)) {
+      // Get an updated indicia user ID.
+      $response = easy_login_call_get_user_id($account);
+      easy_login_handle_get_user_id_response($account, $response, TRUE);
+    }
   }
   else {
     easy_login_synchronise_account_to_warehouse($account);
@@ -168,6 +171,44 @@ function easy_login_allowed_locations() {
     return $locations;
   }
   return [];
+}
+
+/**
+ * Confirms a user_id is valid on the warehouse.
+ *
+ * @param object $account
+ *   User account object.
+ *
+ * @return bool
+ *   True if user_id is valid on warehouse else false.
+ */
+function easy_login_check_user_id($account) {
+  if (empty($account->field_indicia_user_id->value)) {
+    return FALSE;
+  }
+
+  iform_load_helpers(['data_entry_helper']);
+  $config = \Drupal::config('iform.settings');
+  $auth = data_entry_helper::get_read_auth(
+    $config->get('website_id'), $config->get('password')
+  );
+  $extraParams['nonce'] = $auth['nonce'];
+  $extraParams['auth_token'] = $auth['auth_token'];
+  $extraParams['id'] = $account->field_indicia_user_id->value;
+
+  $response = data_entry_helper::get_population_data([
+    'table' => 'user',
+    'extraParams' => $extraParams,
+  ]);
+  if (isset($response['error'])) {
+    // There was an error.
+    return FALSE;
+  }
+  if (count($response) === 0) {
+    // There was no user found.
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**
