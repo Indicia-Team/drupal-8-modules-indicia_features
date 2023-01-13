@@ -38,11 +38,12 @@ class ImportOptionsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $path = NULL, $file = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, $path = NULL, $file = NULL, $extscase = 'lower') {
     $form = [];
     $basefile = \Drupal::service('file_system')->realpath("public://locations_shp_importer/$path") . DIRECTORY_SEPARATOR . $file;
+    $dbfExt = $extscase === 'upper' ? 'DBF' : 'dbf';
     try {
-      $dBaseTable = new Table("$basefile.dbf");
+      $dBaseTable = new Table("$basefile.$dbfExt");
     }
     catch (\Exception $e) {
       $this->messenger()->addError($this->t('Unable to open DBF file.'));
@@ -67,6 +68,10 @@ class ImportOptionsForm extends FormBase {
     $form['basefile'] = [
       '#type' => 'hidden',
       '#value' => $basefile,
+    ];
+    $form['extscase'] = [
+      '#type' => 'hidden',
+      '#value' => $extscase,
     ];
     // @todo List of options more comprehensive, or use Indicia settings.
     $form['srid'] = [
@@ -99,19 +104,33 @@ class ImportOptionsForm extends FormBase {
       '#type' => 'fieldset',
       '#title' => $this->t('Existing sites'),
     ];
-    $form['existing_fieldset']['existing_instruct'] = [
-      '#markup' => $existingInstruct,
-    ];
-    $form['existing_fieldset']['existing'] = [
-      '#title' => $this->t('Behaviour for existing locations with same name and code'),
-      '#type' => 'radios',
-      '#options' => [
-        'ignore_new' => $this->t('Ignore the new location.<p>Select this if your shp file upload has multiple site boundaries, and the duplicate site is not a replacement.</p>'),
-        'update_boundary' => $this->t('Update the existing location with the imported location boundary.<p>Select this if the duplicate site boundary is an update to an existing site.</p>'),
-        'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.<p>Select this if the site boundary is a duplicate, but you wish to keep it as separate/unique to the original - not recommended.</p>'),
-      ],
-      '#required' => TRUE,
-    ];
+    $duplicateOptions = $this->getDuplicateHandlingOptions();
+    if (count($duplicateOptions) > 1) {
+      $form['existing_fieldset']['existing_instruct'] = [
+        '#markup' => $existingInstruct,
+      ];
+      $form['existing_fieldset']['existing'] = [
+        '#title' => $this->t('Behaviour for existing locations with same name and code'),
+        '#type' => 'radios',
+        '#options' => $this->getDuplicateHandlingOptions(),
+        '#required' => TRUE,
+      ];
+    }
+    else {
+      // Only 1 possible option for duplicate handling, so output the option
+      // value as a hidden.
+      $form['existing_fieldset']['existing'] = [
+        '#type' => 'hidden',
+        '#value' => array_keys($duplicateOptions)[0],
+      ];
+      $optionDescription = array_values($duplicateOptions)[0];
+      // Label doesn't need the additional information in the following
+      // paragraph.
+      $label = explode('<p>', $optionDescription)[0];
+      $form['existing_fieldset']['existing_info'] = [
+        '#markup' => '<p>' . $this->t('Locations will be imported using the following method of handling duplicates') . ':</p><p class="alert alert-info">' . $label . '</p>',
+      ];
+    }
     $form['multiple_fieldset'] = [
       '#type' => 'fieldset',
       '#title' => $this->t('Multiple polygons'),
@@ -136,6 +155,11 @@ class ImportOptionsForm extends FormBase {
       '#options' => $locationTypes,
       '#empty_option' => $this->t('- Please select -'),
       '#required' => TRUE,
+    ];
+    $form['notice'] = [
+      '#markup' => '<div class="alert alert-warning">' .
+        $this->t('If you are importing multiple locations, please note that they may take a few minutes to import. If you need to import more than around 50 boundaries at a time then please separate them into several SHP file sets.') .
+        '</div>',
     ];
     $form['submit'] = [
       '#type' => 'submit',
@@ -176,6 +200,26 @@ class ImportOptionsForm extends FormBase {
   }
 
   /**
+   * Retrieve the options available for handling duplicates, as per config.
+   *
+   * @return array
+   *   Associative array of options.
+   */
+  private function getDuplicateHandlingOptions() {
+    $options = [
+      'ignore_new' => $this->t('Ignore the new location.') . '<p>' . $this->t('Select this if your shp file upload has multiple site boundaries, and the duplicate site is not a replacement.') . '</p>',
+      'update_boundary' => $this->t('Update the existing location with the imported location boundary.') . '<p>' . $this->t('Select this if the duplicate site boundary is an update to an existing site.') . '</p>',
+      'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.') . '<p>' . $this->t('Select this if the site boundary is a duplicate, but you wish to keep it as separate/unique to the original - not recommended.') . '</p>',
+    ];
+    $config = $this->config('locations_shp_importer.settings');
+    $existingOptions = $config->get('existing_options');
+    if ($existingOptions) {
+      $options = array_intersect_key($options, array_combine(array_values($existingOptions), array_values($existingOptions)));
+    }
+    return $options;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
@@ -184,7 +228,8 @@ class ImportOptionsForm extends FormBase {
     $options = $form_state->cleanValues()->getValues();
     $conn = iform_get_connection_details();
     $auth = \helper_base::get_read_write_auth($conn['website_id'], $conn['password']);
-    if (!file_exists("$options[basefile].dbf")) {
+    $dbfExt = $options['extscase'] === 'upper' ? 'DBF' : 'dbf';
+    if (!file_exists("$options[basefile].$dbfExt")) {
       $this->messenger()->addError('dBase file not found');
       return;
     }
@@ -274,8 +319,10 @@ class ImportOptionsForm extends FormBase {
    *   Form options.
    */
   private function getNameCodeCombinationsFromImport(array $options) {
+    $dbfExt = $options['extscase'] === 'upper' ? 'DBF' : 'dbf';
+    $shpExt = $options['extscase'] === 'upper' ? 'SHP' : 'shp';
     try {
-      $dBaseTable = new Table("$options[basefile].dbf");
+      $dBaseTable = new Table("$options[basefile].$dbfExt");
     }
     catch (\Exception $e) {
       $this->messenger()->addError('Could not open dBase file');
@@ -283,7 +330,7 @@ class ImportOptionsForm extends FormBase {
       return;
     }
     // Read next polygon.
-    $handle = fopen("$options[basefile].shp", 'rb');
+    $handle = fopen("$options[basefile].$shpExt", 'rb');
     $this->nameCodeCombinations = [];
     // Don't care about file header: jump direct to records.
     fseek($handle, 100, SEEK_SET);

@@ -38,6 +38,17 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('If you want to limit the available location types that locations can be imported into, specify the terms here, one per line.'),
       '#default_value' => $config->get('location_type_terms'),
     ];
+    $form['existing_options'] = [
+      '#title' => $this->t('Available options for duplicate handling'),
+      '#type' => 'checkboxes',
+      '#options' => [
+        'ignore_new' => $this->t('Ignore the new location.'),
+        'update_boundary' => $this->t('Update the existing location with the imported location boundary.'),
+        'always_new' => $this->t('Always treat the imported location as new, giving it a unique name.'),
+      ],
+      '#default_value' => $config->get('existing_options'),
+      '#required' => TRUE,
+    ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
@@ -52,6 +63,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('locations_shp_importer.settings');
     $values = $form_state->getValues();
     $config->set('location_type_terms', $values['location_type_terms']);
+    $config->set('existing_options', $values['existing_options']);
     $config->save();
     $this->messenger()->addMessage($this->t('The settings have been saved.'));
   }

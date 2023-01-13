@@ -30,7 +30,7 @@ class ImportForm extends FormBase {
     global $indicia_templates;
     $msg = $this->t('To use this tool, you need a set of files in SHP format, including at least a file called *.shp and a file called *.dbf.');
     $msg .= ' ' . $this->t('The SHP file attributes in the *.dbf file must include an attribute which provides a name and an optional code for each location.');
-    $msg .= ' ' . $this->t('Select your files and add them to a zip file, not in a sub-folder then upload the zip file below.');
+    $msg .= ' ' . $this->t('Select your files and add them to a *.zip file, not in a sub-folder, then upload the zip file below.');
     $instruct = str_replace(
       '{message}',
       $msg,
@@ -70,25 +70,29 @@ class ImportForm extends FormBase {
     $exts = [];
     foreach ($files as $file) {
       if (!preg_match('#^[^/]++$#', $file)) {
-        $this->messenger()->addError($this->t('The files must be in the root of the zip file, not in a sub-folder.'));
+        $this->messenger()->addError($this->t('There is a problem with the Zipped SHP file you uploaded. The files in the *.zip archive must be directly in the root of the zip file, not in a sub-folder.'));
         return;
       }
-      $tokens = explode('.', $file);
-      $ext = array_pop($tokens);
-      $filename = implode('.', $tokens);
+      $tokens = explode('.', $file, 2);
+      $filename = $tokens[0];
+      $ext = $tokens[1];
       if (!$firstFilename) {
         $firstFilename = $filename;
       }
       else {
         if ($filename !== $firstFilename) {
-          $this->messenger()->addError($this->t('SHP file upload problem - ZIP file contains files with different file names.'));
+          $this->messenger()->addError($this->t(
+            'There is a problem with the Zipped SHP file you uploaded. It should contain a set of files which all share the same file name but having different extensions. The *.zip file you uploaded contained files with different file names, such as @first and @second, so it appears to contain several SHP file sets and therefore cannot be imported.',
+            ['@first' => $firstFilename, '@second' => $filename]
+          ));
           return;
         }
       }
       $exts[] = strtolower($ext);
+      $extsUppercase = strtolower($ext) !== $ext;
     }
     if (!in_array('dbf', $exts) || !in_array('shp', $exts)) {
-      $this->messenger()->addError($this->t('SHP file upload problem - ZIP file must contain at least a *.shp and *.dbf file.'));
+      $this->messenger()->addError($this->t('There is a problem with the Zipped SHP file you uploaded. The *.zip file must contain at least a *.shp and *.dbf file in order to be imported as a valid SHP file set.'));
       return;
     }
     $directory = uniqid('', TRUE);
@@ -96,6 +100,7 @@ class ImportForm extends FormBase {
     $form_state->setRedirect('locations_shp_importer.import_options', [
       'path' => $directory,
       'file' => $firstFilename,
+      'extscase' => $extsUppercase ? 'upper' : 'lower',
     ]);
   }
 

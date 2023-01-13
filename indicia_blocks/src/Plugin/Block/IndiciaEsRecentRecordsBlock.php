@@ -24,7 +24,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     // Retrieve existing configuration for this block.
     $config = $this->getConfiguration();
 
-    // Add a form field to the existing block configuration form.
+    // Option to exclude sensitive records.
     $form['sensitive_records'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include sensitive records'),
@@ -32,12 +32,27 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       '#default_value' => isset($config['sensitive_records']) ? $config['sensitive_records'] : 0,
     ];
 
-    // Add a form field to the existing block configuration form.
+    // Option to exclude unverified records.
     $form['unverified_records'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Include unverified records'),
       '#description' => $this->t('Unless this box is ticked, unverified (pending) records are completely excluded.'),
       '#default_value' => isset($config['unverified_records']) ? $config['unverified_records'] : 0,
+    ];
+
+    // Option to limit to current user.
+    $form['limit_to_user'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Limit to current user's records"),
+      '#description' => $this->t('If ticked, only records for the current user are shown.'),
+      '#default_value' => isset($config['limit_to_user']) ? $config['limit_to_user'] : 0,
+    ];
+
+    $form['cache_timeout'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Cache timeout'),
+      '#description' => $this->t('Minimum number of seconds that the data request will be cached for, resulting in faster loads times.'),
+      '#default_value' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
     ];
 
     return $form;
@@ -51,6 +66,8 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     // Save our custom settings when the form is submitted.
     $this->setConfigurationValue('sensitive_records', $form_state->getValue('sensitive_records'));
     $this->setConfigurationValue('unverified_records', $form_state->getValue('unverified_records'));
+    $this->setConfigurationValue('limit_to_user', $form_state->getValue('limit_to_user'));
+    $this->setConfigurationValue('cache_timeout', $form_state->getValue('cache_timeout'));
   }
 
   /**
@@ -58,7 +75,13 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
    */
   public function build() {
     iform_load_helpers(['ElasticsearchReportHelper']);
-    \ElasticsearchReportHelper::enableElasticsearchProxy();
+    $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
+    if (!$enabled) {
+      global $indicia_templates;
+      return [
+        '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
+      ];
+    }
     $config = $this->getConfiguration();
     $location = hostsite_get_user_field('location');
     $groups = hostsite_get_user_field('taxon_groups', FALSE, TRUE);
@@ -66,6 +89,8 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
       'id',
       'taxon.accepted_name',
       'taxon.vernacular_name',
+      'taxon.taxon_rank',
+      'taxon.taxon_rank_sort_order',
       'event.date_start',
       'event.date_end',
       'event.recorded_by',
@@ -77,7 +102,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     $options = [
       'id' => 'src-IndiciaEsRecentRecordsBlock',
       'size' => 10,
-      'proxyCacheTimeout' => 300,
+      'proxyCacheTimeout' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
       'filterPath' => $filterPath,
       'initialMapBounds' => TRUE,
       'sort' => ['id' => 'desc'],
@@ -109,12 +134,23 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
         'value' => 'false',
       ];
     }
-    // Other record filters.
     if (empty($config['unverified_records'])) {
       $options['filterBoolClauses']['must'][] = [
         'query_type' => 'term',
         'field' => 'identification.verification_status',
         'value' => 'V',
+      ];
+    }
+    if (!empty($config['limit_to_user'])) {
+      $warehouseUserId = $this->getWarehouseUserId();
+      if (empty($warehouseUserId)) {
+        // Not linked to the warehouse so force report to be blank.
+        $warehouseUserId = -9999;
+      }
+      $options['filterBoolClauses']['must'][] = [
+        'query_type' => 'term',
+        'field' => 'metadata.created_by_id',
+        'value' => $warehouseUserId,
       ];
     }
 
@@ -132,6 +168,7 @@ HTML;
       '#attached' => [
         'library' => [
           'indicia_blocks/es-blocks',
+          'iform/fancybox',
         ],
       ],
       '#cache' => [
@@ -149,4 +186,5 @@ HTML;
   public function getCacheMaxAge() {
     return 0;
   }
+
 }

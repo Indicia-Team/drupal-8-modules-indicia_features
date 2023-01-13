@@ -1,7 +1,11 @@
 #indicia-es-totals-block-container {
   font-size: 150%;
+  display: table;
+  width: 100%;
+  margin-bottom: 8px;
   > div {
-      padding: 0 2px;
+    padding: 0 2px;
+    display: table-cell;
     > div {
       /* hide till loaded */
       opacity: 0;

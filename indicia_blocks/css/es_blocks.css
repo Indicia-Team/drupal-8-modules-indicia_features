@@ -1,8 +1,12 @@
 #indicia-es-totals-block-container {
   font-size: 150%;
+  display: table;
+  width: 100%;
+  margin-bottom: 8px;
 }
 #indicia-es-totals-block-container > div {
   padding: 0 2px;
+  display: table-cell;
 }
 #indicia-es-totals-block-container > div > div {
   /* hide till loaded */
