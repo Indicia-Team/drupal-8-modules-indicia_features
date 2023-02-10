@@ -145,7 +145,9 @@ function indicia_notification_emails_user_form_submit($form, FormStateInterface 
 function indicia_notification_emails_get_options($account) {
   $options = [
     ['comment', 'comments on your records', 'C'],
-    ['record_cleaner', 'automated Record Cleaner record checks', 'A'],
+    ['query', 'queried records', 'Q'],
+    ['redet', 'redetermined records', 'RD'],
+    ['auto_check', 'records which failed automated checks', 'A'],
     ['verification', 'verification of your records', 'V'],
     ['milestone', "milestones and awards you've achieved", 'M'],
     ['pending_groups_users', "pending members for groups you administer", 'GU'],
