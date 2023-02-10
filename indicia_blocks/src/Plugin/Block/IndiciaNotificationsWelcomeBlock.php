@@ -124,14 +124,19 @@ HTML;
       'wantRecords' => 0,
       'wantCount' => 1,
     ];
+    // Flag to track if we can get away with the simple version of the report
+    // which can't filter on occurrence data.
+    $simple = !hostsite_get_user_field('training');
     if (!empty($config['taxon_meaning_id'])) {
       $params['taxon_meaning_id'] = $config['taxon_meaning_id'];
+      $simple = FALSE;
     }
     if (!empty($config['taxon_group_id'])) {
       $params['taxon_group_id'] = $config['taxon_group_id'];
+      $simple = FALSE;
     }
     $data = \report_helper::get_report_data([
-      'dataSource' => 'library/notifications/notifications_list_for_notifications_centre',
+      'dataSource' => 'library/notifications/notifications_list_for_notifications_centre' . ($simple ? '_simple' : ''),
       'readAuth' => $readAuth,
       'extraParams' => $params,
     ]);
