@@ -4,7 +4,6 @@ namespace Drupal\indicia_blocks\Plugin\Block;
 
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
-use Masterminds\HTML5;
 
 /**
  * Provides a 'Notifications & Welcome Message' block.
