@@ -3,7 +3,9 @@ jQuery(document).ready(function docReady($) {
 
   var $advancedSelects = $(
     '#edit-email-comment-frequency, ' +
-    '#edit-email-record-cleaner-frequency, ' +
+    '#edit-email-query-frequency, ' +
+    '#edit-email-redet-frequency, ' +
+    '#edit-email-auto-check-frequency, ' +
     '#edit-email-verification-frequency, ' +
     '#edit-email-milestone-frequency, ' +
     '#edit-email-verifier-task-frequency, ' +
