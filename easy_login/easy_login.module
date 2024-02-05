@@ -85,7 +85,7 @@ function easy_login_form_user_form_alter(
  */
 function easy_login_user_insert($account) {
   if ($account->status->value) {
-    easy_login_synchronise_account_to_warehouse($account, FALSE);
+    easy_login_synchronise_account_to_warehouse($account);
   }
 }
 
@@ -94,11 +94,12 @@ function easy_login_user_insert($account) {
  *
  * Synchronises user fields to matching custom attributes on
  * the Indicia warehouse.
- * @param UserInterface $account
+ *
+ * @param \Drupal\user\UserInterface $account
  *   User account.
  */
 function easy_login_user_update(UserInterface $account) {
-  easy_login_synchronise_account_to_warehouse($account, FALSE);
+  easy_login_synchronise_account_to_warehouse($account);
 }
 
 /**
@@ -110,7 +111,7 @@ function easy_login_user_update(UserInterface $account) {
  */
 function easy_login_user_delete($account) {
   clear_indicia_fields_synced_to_warehouse($account);
-  easy_login_synchronise_account_to_warehouse($account, FALSE);
+  easy_login_synchronise_account_to_warehouse($account);
   call_warehouse_user_delete($account);
 }
 
