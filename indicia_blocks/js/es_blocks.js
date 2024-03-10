@@ -45,6 +45,9 @@ jQuery(document).ready(function($) {
     });
   }
 
+  /**
+   * Handle the AJAX ES response for the totals block data.
+   */
   indiciaFns.handleEsTotalsResponse = function(div, sourceSettings, response) {
     var occs;
     var occsString;
@@ -65,5 +68,52 @@ jQuery(document).ready(function($) {
       $(div).find('.photos').append(photosString.replace('{1}', nf.format(response.aggregations.photo_count.doc_count))).addClass('loaded');
       $(div).find('.recorders').append(recordersString.replace('{1}', nf.format(response.aggregations.recorder_count.value))).addClass('loaded');
     }
+  }
+
+  /**
+   * Handle the AJAX ES response for the phenology graph block data.
+   */
+  indiciaFns.handlePheonologyGraphResponse = function(div, sourceSettings, response) {
+    let monthlyRecordsData = [];
+    let yearlySqData = [];
+    let yearlyRecordsData = [];
+    let yearlyGroupRecordsData = {};
+    let allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    response.aggregations.by_month.buckets.forEach(function (w) {
+      if (w.key) {
+        let index = allMonths.indexOf(w.key);
+        if (index !== -1) {
+          allMonths.splice(index, 1);
+        }
+        monthlyRecordsData.push({
+          taxon: 'taxon',
+          month: w.key,
+          n: w.doc_count
+        });
+      }
+    });
+    // Fill in the zeros.
+    allMonths.forEach(function (m) {
+      monthlyRecordsData.push({
+        taxon: 'taxon',
+        month: m,
+        n: 0
+      });
+    });
+    brccharts.phen1({
+      selector: '#phenology-graph',
+      axisLabelFontSize: 22,
+      data: monthlyRecordsData,
+      metrics: [{ prop: 'n', label: 'Records per month', opacity: 1, colour: '#337ab7' }],
+      taxa: ['taxon'],
+      width: 500,
+      height: 200,
+      perRow: 1,
+      expand: true,
+      showTaxonLabel: false,
+      showLegend: false,
+      margin: {left: 60, right: 0, top: 10, bottom: 20},
+      axisLeftLabel: 'Records per month'
+    });
   }
 });
