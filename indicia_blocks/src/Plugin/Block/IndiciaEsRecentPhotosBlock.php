@@ -21,6 +21,15 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
   public function blockForm($form, FormStateInterface $form_state) {
     $form = parent::blockForm($form, $form_state);
     $this->addDefaultEsFilterFormCtrls($form);
+    // Retrieve existing configuration for this block.
+    $config = $this->getConfiguration();
+    // Add a limit control.
+    $form['limit'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Number of records'),
+      '#description' => $this->t('Limit the report to this number of records.'),
+      '#default_value' => $config['limit'] ?? 6,
+    ];
     return $form;
   }
 
@@ -30,6 +39,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
   public function blockSubmit($form, FormStateInterface $form_state) {
     parent::blockSubmit($form, $form_state);
     $this->saveDefaultEsFilterFormCtrls($form_state);
+    $this->setConfigurationValue('limit', $form_state->getValue('limit'));
   }
 
   /**
@@ -60,7 +70,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
           ]
         ),
       ],
-      'size' => 6,
+      'size' => $config['limit'] ?? 6,
       'sort' => ['metadata.created_on' => 'desc'],
     ]);
     $r .= \ElasticsearchReportHelper::cardGallery([
