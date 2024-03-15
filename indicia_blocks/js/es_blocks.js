@@ -73,11 +73,8 @@ jQuery(document).ready(function($) {
   /**
    * Handle the AJAX ES response for the phenology graph block data.
    */
-  indiciaFns.handlePheonologyGraphResponse = function(div, sourceSettings, response) {
+  indiciaFns.handlePhenologyGraphResponse = function(div, sourceSettings, response) {
     let monthlyRecordsData = [];
-    let yearlySqData = [];
-    let yearlyRecordsData = [];
-    let yearlyGroupRecordsData = {};
     let allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
     response.aggregations.by_month.buckets.forEach(function (w) {
       if (w.key) {
@@ -116,4 +113,68 @@ jQuery(document).ready(function($) {
       axisLeftLabel: 'Records per month'
     });
   }
+
+  /**
+   * Handle the AJAX ES response for the phenology taxon group pie data.
+   */
+  indiciaFns.handleRecordsByTaxonGroupPieResponse = function(div, sourceSettings, response) {
+    let pieSectionsData = [];
+    response.aggregations.by_group.buckets.forEach(function (w) {
+      pieSectionsData.push({
+        name: w.key,
+        number: w.doc_count
+      });
+    });
+    // Add other bucket for remainder.
+    if (response.aggregations.by_group.sum_other_doc_count > 0) {
+      pieSectionsData.push({
+        name: 'other',
+        number: response.aggregations.by_group.sum_other_doc_count
+      });
+    }
+    brccharts.pie({
+      selector: '#records-by-taxon-groups-pie',
+      data: pieSectionsData
+    })
+  }
+
+  /**
+   * Handle the AJAX ES response for the the verification status pie or donut data.
+   */
+  indiciaFns.handleRecordsByVerificationStatusPieResponse = function(div, sourceSettings, response) {
+    let pieSectionsData = [];
+    let has2ndLevel = false;
+    response.aggregations.by_status.buckets.forEach(function (w) {
+      pieSectionsData.push({
+        set: 1,
+        name: indiciaData.lang.statuses[w.key],
+        number: w.doc_count,
+        colour: indiciaData.statusColours[w.key],
+      });
+      // Optional 2nd level for decision detail.
+      if (w.by_substatus) {
+        w.by_substatus.buckets.forEach(function (v) {
+          pieSectionsData.push({
+            set: 2,
+            name: indiciaData.lang.statuses[w.key + v.key],
+            number: v.doc_count,
+            colour: indiciaData.statusColours[w.key + v.key],
+          });
+          has2ndLevel = true;
+        });
+      }
+    });
+    let opts = {
+      selector: '#records-by-verification-status-pie',
+      data: pieSectionsData,
+      radius: 180
+    };
+    if (has2ndLevel) {
+      // Convert to donut for 2 levels of info.
+      opts.innerRadius = 110;
+      opts.innerRadius2 = 40;
+    }
+    brccharts.pie(opts);
+  }
+
 });

@@ -84,7 +84,7 @@ abstract class IndiciaBlockBase extends BlockBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Include sensitive records'),
       '#description' => $this->t('Unless this box is ticked, sensitive records are completely excluded.'),
-      '#default_value' => isset($config['sensitive_records']) ? $config['sensitive_records'] : 0,
+      '#default_value' => $config['sensitive_records'] ?? 0,
     ];
 
     // Option to exclude unverified records.
@@ -92,7 +92,7 @@ abstract class IndiciaBlockBase extends BlockBase {
       '#type' => 'checkbox',
       '#title' => $this->t('Include unverified records'),
       '#description' => $this->t('Unless this box is ticked, unverified (pending) records are completely excluded.'),
-      '#default_value' => isset($config['unverified_records']) ? $config['unverified_records'] : 0,
+      '#default_value' => $config['unverified_records'] ?? 0,
     ];
 
     // Option to limit to current user.
@@ -100,14 +100,14 @@ abstract class IndiciaBlockBase extends BlockBase {
       '#type' => 'checkbox',
       '#title' => $this->t("Limit to current user's records"),
       '#description' => $this->t('If ticked, only records for the current user are shown.'),
-      '#default_value' => isset($config['limit_to_user']) ? $config['limit_to_user'] : 0,
+      '#default_value' => $config['limit_to_user'] ?? 0,
     ];
 
     $form['cache_timeout'] = [
       '#type' => 'number',
       '#title' => $this->t('Cache timeout'),
       '#description' => $this->t('Minimum number of seconds that the data request will be cached for, resulting in faster loads times.'),
-      '#default_value' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
+      '#default_value' => $config['cache_timeout'] ?? 300,
     ];
   }
 

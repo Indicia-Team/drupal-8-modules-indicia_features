@@ -6,14 +6,14 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
- * Provides an 'Elasticsearch phenology graph' block.
+ * Provides a 'Elasticsearch records by taxon group pie' block.
  *
  * @Block(
- *   id = "es_phenology_graph_block",
- *   admin_label = @Translation("Elasticsearch phenology graph block"),
+ *   id = "es_records_by_taxon_group_pie_block",
+ *   admin_label = @Translation("Elasticsearch records by taxon group pie"),
  * )
  */
-class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
+class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -45,24 +45,24 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
     }
     $config = $this->getConfiguration();
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'phenologyGraphSource',
+      'id' => 'recordsByTaxonGroupPieSource',
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
-        'by_month' => [
+        'by_group' => [
           'terms' => [
-            'field' => 'event.month',
-            'size' => 12,
+            'field' => 'taxon.group.keyword',
+            'size' => 8,
           ],
         ],
       ],
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'phenologyGraphSource',
-      'functionName' => 'handlePhenologyGraphResponse',
+      'source' => 'recordsByTaxonGroupPieSource',
+      'functionName' => 'handleRecordsByTaxonGroupPieResponse',
     ]);
-    $r .= '<div id="phenology-graph" class="indicia-block-visualisation"></div>';
+    $r .= '<div id="records-by-taxon-groups-pie" class="indicia-block-visualisation"></div>';
 
     return [
       '#markup' => Markup::create($r),
