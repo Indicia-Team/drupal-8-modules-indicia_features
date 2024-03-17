@@ -68,6 +68,7 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
       global $indicia_templates;
@@ -75,7 +76,6 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
         '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
       ];
     }
-    iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
       global $indicia_templates;

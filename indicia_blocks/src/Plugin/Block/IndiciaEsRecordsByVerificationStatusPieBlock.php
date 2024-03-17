@@ -82,6 +82,7 @@ class IndiciaEsRecordsByVerificationStatusPieBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
       global $indicia_templates;
