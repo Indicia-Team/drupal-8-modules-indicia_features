@@ -43,7 +43,7 @@ jQuery(document).ready(function($) {
         $(li).append(mediaDiv);
       }
     });
-  }
+  };
 
   /**
    * Handle the AJAX ES response for the totals block data.
@@ -68,7 +68,7 @@ jQuery(document).ready(function($) {
       $(div).find('.photos').append(photosString.replace('{1}', nf.format(response.aggregations.photo_count.doc_count))).addClass('loaded');
       $(div).find('.recorders').append(recordersString.replace('{1}', nf.format(response.aggregations.recorder_count.value))).addClass('loaded');
     }
-  }
+  };
 
   /**
    * Handle the AJAX ES response for the phenology graph block data.
@@ -112,7 +112,7 @@ jQuery(document).ready(function($) {
       margin: {left: 60, right: 0, top: 10, bottom: 20},
       axisLeftLabel: 'Records per month'
     });
-  }
+  };
 
   /**
    * Handle the AJAX ES response for the phenology taxon group pie data.
@@ -136,7 +136,7 @@ jQuery(document).ready(function($) {
       selector: '#records-by-taxon-groups-pie',
       data: pieSectionsData
     })
-  }
+  };
 
   /**
    * Handle the AJAX ES response for the the verification status pie or donut data.
@@ -175,6 +175,35 @@ jQuery(document).ready(function($) {
       opts.innerRadius2 = 40;
     }
     brccharts.pie(opts);
-  }
+  };
+
+  /**
+   * Output the top recorders table.
+   */
+  indiciaFns.handleTopRecordersTableResponse = function(div, sourceSettings, response) {
+    const table = $('<table class="table">').appendTo(div);
+    const headTr = $('<tr>').appendTo($('<thead>').appendTo(table));
+    const body = $(table).append('<tbody>');
+    // Prepare the header.
+    $('<th>' + indiciaData.lang.topRecordersByRecords.recorderName + '</th>').appendTo(headTr);
+    // Columns to include are optional.
+    if (indiciaData.topRecordersTableOptions.includeRecords) {
+      $('<th>' + indiciaData.lang.topRecordersByRecords.noOfRecords + '</th>').appendTo(headTr);
+    }
+    if (indiciaData.topRecordersTableOptions.includeSpecies) {
+      $('<th>' + indiciaData.lang.topRecordersByRecords.noOfSpecies + '</th>').appendTo(headTr);
+    }
+    // Add the rows.
+    response.aggregations.records_by_user.buckets.forEach(function (w) {
+      let tr = $('<tr>').appendTo(body);
+      $('<th>' + w.key + '</th>').appendTo(tr);
+      if (indiciaData.topRecordersTableOptions.includeRecords) {
+        $('<td>' + w.doc_count + '</td>').appendTo(tr);
+      }
+      if (indiciaData.topRecordersTableOptions.includeSpecies) {
+        $('<td>' + w.species_count.value + '</td>').appendTo(tr);
+      }
+    });
+  };
 
 });
