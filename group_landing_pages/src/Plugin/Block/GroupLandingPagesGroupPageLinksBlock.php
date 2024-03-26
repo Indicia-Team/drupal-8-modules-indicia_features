@@ -27,7 +27,6 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     }
     $conn = iform_get_connection_details();
     iform_load_helpers(['helper_base']);
-    hostsite_show_message(var_export($config, TRUE));
     return [
       // @todo Set group member param properly.
       '#markup' => Markup::create(\ElasticsearchReportHelper::getGroupPageLinks([
