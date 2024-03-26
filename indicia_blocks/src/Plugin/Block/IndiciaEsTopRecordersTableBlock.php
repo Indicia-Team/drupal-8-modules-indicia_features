@@ -89,13 +89,13 @@ class IndiciaEsTopRecordersTableBlock extends IndiciaBlockBase {
       'noOfRecords' => 'No. of records',
       'noOfSpecies' => 'No. of species',
       'recorderName' => 'Recorder name',
-      'sort' => 'records',
     ]);
     // Get config with defaults.
     $config = array_merge([
       'limit' => 6,
       'include_records' => 1,
       'include_species' => 1,
+      'sort' => 'records',
     ], $config = $this->getConfiguration());
     $agg = [
       'records_by_user' => [

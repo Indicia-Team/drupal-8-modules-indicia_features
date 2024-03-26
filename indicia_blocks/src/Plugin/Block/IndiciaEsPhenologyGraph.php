@@ -36,7 +36,7 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    $blockCount++;
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
