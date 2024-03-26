@@ -1,0 +1,11 @@
+name: 'Group landing pages'
+description: 'Provides landing pages for every group (e.g. projects or activities).'
+core: 8.x
+core_version_requirement: ^10
+version: "9.0.0"
+package: "Indicia"
+type: module
+dependencies:
+  - iform
+  - indicia_blocks
+  - twig_tweak
