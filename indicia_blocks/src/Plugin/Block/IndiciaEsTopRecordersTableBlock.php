@@ -9,7 +9,7 @@ use Drupal\Core\Render\Markup;
  * Provides a 'Elasticsearch top recorders table' block.
  *
  * @Block(
- *   id = "es_top recorders_table_block",
+ *   id = "es_top_recorders_table_block",
  *   admin_label = @Translation("Elasticsearch top recorders table block"),
  * )
  */

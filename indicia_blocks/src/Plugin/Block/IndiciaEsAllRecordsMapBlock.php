@@ -84,6 +84,11 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
       ];
     }
     $config = $this->getConfiguration();
+    // Apply defaults.
+    $config = array_merge([
+      'map_layer_type' => 'circle',
+      'base_layer' => 'OpenStreetMap',
+    ], $config);
     // Source mode depends on map type.
     $mode = [
       'circle' => 'mapGridSquare',

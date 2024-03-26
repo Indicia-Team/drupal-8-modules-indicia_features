@@ -2,8 +2,8 @@
 
 namespace Drupal\indicia_blocks\Plugin\Block;
 
-use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
 
 /**
  * Provides a 'Recent Elasticsearch Records' block.
