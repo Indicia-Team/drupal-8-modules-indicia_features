@@ -68,6 +68,7 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -83,12 +84,11 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
         '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
       ];
     }
-    $config = $this->getConfiguration();
-    // Apply defaults.
+    // Get config with defaults.
     $config = array_merge([
       'map_layer_type' => 'circle',
       'base_layer' => 'OpenStreetMap',
-    ], $config);
+    ], $this->getConfiguration());
     // Source mode depends on map type.
     $mode = [
       'circle' => 'mapGridSquare',
@@ -103,20 +103,20 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
       'geo_hash' => 'square',
     ][$config['map_layer_type']];
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'allRecordsMapBlockSource',
+      'id' => 'allRecordsMapBlockSource-' . self::$blockCount,
       'mode' => $mode,
       'switchToGeomsAt' => 13,
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::leafletMap([
-      'id' => 'recordsGridSquaresMap',
+      'id' => 'allRecordsMap-' . self::$blockCount,
       'baseLayerConfig' => [
         $config['base_layer'] => $this->getBaseLayerConfig($config['base_layer']),
       ],
       'layerConfig' => [
         'recordsMap' => [
           'title' => 'All records in current filter (grid map)',
-          'source' => 'allRecordsMapBlockSource',
+          'source' => 'allRecordsMapBlockSource-' . self::$blockCount,
           'enabled' => TRUE,
           'forceEnabled' => TRUE,
           'type' => $markerType,

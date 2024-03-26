@@ -76,6 +76,7 @@ class IndiciaEsTopRecordersTableBlock extends IndiciaBlockBase {
    * @todo This year's counts
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -88,8 +89,14 @@ class IndiciaEsTopRecordersTableBlock extends IndiciaBlockBase {
       'noOfRecords' => 'No. of records',
       'noOfSpecies' => 'No. of species',
       'recorderName' => 'Recorder name',
+      'sort' => 'records',
     ]);
-    $config = $this->getConfiguration();
+    // Get config with defaults.
+    $config = array_merge([
+      'limit' => 6,
+      'include_records' => 1,
+      'include_species' => 1,
+    ], $config = $this->getConfiguration());
     $agg = [
       'records_by_user' => [
         'terms' => [
@@ -118,14 +125,14 @@ class IndiciaEsTopRecordersTableBlock extends IndiciaBlockBase {
       'includeSpecies' => $config['include_species'] === 1,
     ];
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'topRecordersTableSource',
+      'id' => 'topRecordersTableSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => $agg,
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'topRecordersTableSource',
+      'source' => 'topRecordersTableSource-' . self::$blockCount,
       'functionName' => 'handleTopRecordersTableResponse',
     ]);
 

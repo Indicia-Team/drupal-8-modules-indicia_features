@@ -82,6 +82,7 @@ class IndiciaEsRecordsByVerificationStatusPieBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -91,7 +92,10 @@ class IndiciaEsRecordsByVerificationStatusPieBlock extends IndiciaBlockBase {
       ];
     }
     $this->addStatusLabelsToJs();
-    $config = $this->getConfiguration();
+    // Get config with defaults.
+    $config = array_merge([
+      'level_2' => 0,
+    ], $this->getConfiguration());
     $aggs = [
       'terms' => [
         'field' => 'identification.verification_status',
@@ -109,7 +113,7 @@ class IndiciaEsRecordsByVerificationStatusPieBlock extends IndiciaBlockBase {
       ];
     }
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'recordsByVerificationStatusPieSource',
+      'id' => 'recordsByVerificationStatusPieSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
@@ -118,10 +122,11 @@ class IndiciaEsRecordsByVerificationStatusPieBlock extends IndiciaBlockBase {
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'recordsByVerificationStatusPieSource',
+      'id' => 'recordsByVerificationStatusPie-' . self::$blockCount,
+      'source' => 'recordsByVerificationStatusPieSource-' . self::$blockCount,
       'functionName' => 'handleRecordsByVerificationStatusPieResponse',
+      'class' => 'indicia-block-visualisation',
     ]);
-    $r .= '<div id="records-by-verification-status-pie" class="indicia-block-visualisation"></div>';
 
     return [
       '#markup' => Markup::create($r),

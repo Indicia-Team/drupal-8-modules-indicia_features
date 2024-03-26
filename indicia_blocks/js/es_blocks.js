@@ -98,7 +98,7 @@ jQuery(document).ready(function($) {
       });
     });
     brccharts.phen1({
-      selector: '#phenology-graph',
+      selector: '#' + div.id,
       axisLabelFontSize: 22,
       data: monthlyRecordsData,
       metrics: [{ prop: 'n', label: 'Records per month', opacity: 1, colour: '#337ab7' }],
@@ -133,7 +133,7 @@ jQuery(document).ready(function($) {
       });
     }
     brccharts.pie({
-      selector: '#records-by-taxon-groups-pie',
+      selector: '#' + div.id,
       data: pieSectionsData
     })
   };
@@ -165,7 +165,7 @@ jQuery(document).ready(function($) {
       }
     });
     let opts = {
-      selector: '#records-by-verification-status-pie',
+      selector: '#' + div.id,
       data: pieSectionsData,
       radius: 180
     };

@@ -36,6 +36,7 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    $blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -46,7 +47,7 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
     }
     $config = $this->getConfiguration();
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'phenologyGraphSource',
+      'id' => 'phenologyGraphSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
@@ -60,10 +61,11 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'phenologyGraphSource',
+      'id' => 'phenologyGraph-' . self::$blockCount,
+      'source' => 'phenologyGraphSource-' . self::$blockCount,
       'functionName' => 'handlePhenologyGraphResponse',
+      'class' => 'indicia-block-visualisation',
     ]);
-    $r .= '<div id="phenology-graph" class="indicia-block-visualisation"></div>';
 
     return [
       '#markup' => Markup::create($r),

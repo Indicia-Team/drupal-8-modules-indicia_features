@@ -14,6 +14,13 @@ use Drupal\user\UserInterface;
 abstract class IndiciaBlockBase extends BlockBase {
 
   /**
+   * Count blocks added, so unique IDs can be generated.
+   *
+   * @var int
+   */
+  protected static $blockCount = 0;
+
+  /**
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {

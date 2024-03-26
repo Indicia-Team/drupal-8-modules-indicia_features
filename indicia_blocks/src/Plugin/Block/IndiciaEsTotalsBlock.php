@@ -2,8 +2,8 @@
 
 namespace Drupal\indicia_blocks\Plugin\Block;
 
-use Drupal\Core\Render\Markup;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
 
 /**
  * Provides a 'Elasticsearch Totals' block.
@@ -36,6 +36,7 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -57,9 +58,9 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
       'recordersMulti' => '{1} recorders',
     ]);
     $options = [
-      'id' => 'src-IndiciaEsTotalsBlock',
+      'id' => 'src-IndiciaEsTotalsBlock-' . self::$blockCount,
       'size' => 0,
-      'proxyCacheTimeout' => isset($config['cache_timeout']) ? $config['cache_timeout'] : 300,
+      'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
         'species_count' => [
           'cardinality' => [
@@ -119,8 +120,8 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
 
 HTML;
     $r .= \ElasticsearchReportHelper::customScript([
-      'id' => 'indicia-es-totals-block',
-      'source' => 'src-IndiciaEsTotalsBlock',
+      'id' => 'indicia-es-totals-block-' . self::$blockCount,
+      'source' => 'src-IndiciaEsTotalsBlock-' . self::$blockCount,
       'functionName' => 'handleEsTotalsResponse',
       'template' => $template,
     ]);

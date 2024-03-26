@@ -46,6 +46,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -54,9 +55,12 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
         '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
       ];
     }
-    $config = $this->getConfiguration();
+    // Get config with defaults.
+    $config = array_merge([
+      'limit' => 6,
+    ], $this->getConfiguration());
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'es-photos',
+      'id' => 'es-photos-' . self::$blockCount,
       'proxyCacheTimeout' => 1800,
       'filterBoolClauses' => [
         'must' => array_merge(
@@ -74,8 +78,8 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
       'sort' => ['metadata.created_on' => 'desc'],
     ]);
     $r .= \ElasticsearchReportHelper::cardGallery([
-      'id' => 'photo-cards',
-      'source' => 'es-photos',
+      'id' => 'photo-cards-' . self::$blockCount,
+      'source' => 'es-photos- ' . self::$blockCount,
       'columns' => [
         [
           'field' => '#taxon_label#',

@@ -46,6 +46,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -54,7 +55,10 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
         '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
       ];
     }
-    $config = $this->getConfiguration();
+    // Get config with defaults.
+    $config = array_merge([
+      'limit' => 10,
+    ], $this->getConfiguration());
     $location = hostsite_get_user_field('location');
     $groups = hostsite_get_user_field('taxon_groups', FALSE, TRUE);
     $fields = [
@@ -72,7 +76,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     ];
     $filterPath = 'hits.hits._source.' . implode(',hits.hits._source.', $fields);
     $options = [
-      'id' => 'src-IndiciaEsRecentRecordsBlock',
+      'id' => 'src-IndiciaEsRecentRecordsBlock-' . self::$blockCount,
       'size' => $config['limit'] ?? 10,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'filterPath' => $filterPath,
@@ -104,7 +108,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
 <input type="hidden" class="es-filter-param" data-es-query-type="term" data-es-field="metadata.sensitive" data-es-bool-clause="must" value="false" />
 HTML;
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'src-IndiciaEsRecentRecordsBlock',
+      'source' => 'src-IndiciaEsRecentRecordsBlock-' . self::$blockCount,
       'functionName' => 'handleEsRecentRecordsResponse',
     ]);
     return [

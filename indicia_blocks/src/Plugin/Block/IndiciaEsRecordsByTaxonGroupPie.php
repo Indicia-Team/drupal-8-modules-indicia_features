@@ -36,6 +36,7 @@ class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    self::$blockCount++;
     iform_load_helpers(['ElasticsearchReportHelper']);
     $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
     if (!$enabled) {
@@ -46,7 +47,7 @@ class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
     }
     $config = $this->getConfiguration();
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'recordsByTaxonGroupPieSource',
+      'id' => 'recordsByTaxonGroupPieSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
@@ -60,10 +61,11 @@ class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'source' => 'recordsByTaxonGroupPieSource',
+      'id' => 'recordsByTaxonGroupPie-' . self::$blockCount,
+      'source' => 'recordsByTaxonGroupPieSource-' . self::$blockCount,
       'functionName' => 'handleRecordsByTaxonGroupPieResponse',
+      'class' => 'indicia-block-visualisation',
     ]);
-    $r .= '<div id="records-by-taxon-groups-pie" class="indicia-block-visualisation"></div>';
 
     return [
       '#markup' => Markup::create($r),
