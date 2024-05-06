@@ -76,34 +76,9 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
           ],
         ],
       ],
+      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ];
-    // Other record filters.
-    if (!empty($config['sensitive_records']) && $config['sensitive_records'] === 0) {
-      $options['filterBoolClauses']['must'][] = [
-        'query_type' => 'term',
-        'field' => 'metadata.sensitive',
-        'value' => 'false',
-      ];
-    }
-    if (!empty($config['unverified_records']) && $config['unverified_records'] === 0) {
-      $options['filterBoolClauses']['must'][] = [
-        'query_type' => 'term',
-        'field' => 'identification.verification_status',
-        'value' => 'V',
-      ];
-    }
     if (!empty($config['limit_to_user'])) {
-      $warehouseUserId = $this->getWarehouseUserId();
-      if (empty($warehouseUserId)) {
-        // Not linked to the warehouse so force report to be blank.
-        $warehouseUserId = -9999;
-      }
-      $options['filterBoolClauses'] = ['must' => []];
-      $options['filterBoolClauses']['must'][] = [
-        'query_type' => 'term',
-        'field' => 'metadata.created_by_id',
-        'value' => $warehouseUserId,
-      ];
       $recordersDiv = '';
     }
     else {

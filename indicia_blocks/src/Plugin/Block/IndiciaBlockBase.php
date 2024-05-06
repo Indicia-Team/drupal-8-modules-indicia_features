@@ -110,6 +110,14 @@ abstract class IndiciaBlockBase extends BlockBase {
       '#default_value' => $config['limit_to_user'] ?? 0,
     ];
 
+    // Option to limit to current website (exclude shared records).
+    $form['limit_to_website'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t("Limit to current website's records"),
+      '#description' => $this->t('If ticked, only records for the current website are shown and records shared from other websites are hidden.'),
+      '#default_value' => $config['limit_to_website'] ?? 0,
+    ];
+
     $form['cache_timeout'] = [
       '#type' => 'number',
       '#title' => $this->t('Cache timeout'),
@@ -123,6 +131,7 @@ abstract class IndiciaBlockBase extends BlockBase {
     $this->setConfigurationValue('sensitive_records', $form_state->getValue('sensitive_records'));
     $this->setConfigurationValue('unverified_records', $form_state->getValue('unverified_records'));
     $this->setConfigurationValue('limit_to_user', $form_state->getValue('limit_to_user'));
+    $this->setConfigurationValue('limit_to_website', $form_state->getValue('limit_to_website'));
     $this->setConfigurationValue('cache_timeout', $form_state->getValue('cache_timeout'));
   }
 
@@ -153,6 +162,14 @@ abstract class IndiciaBlockBase extends BlockBase {
         'query_type' => 'term',
         'field' => 'metadata.created_by_id',
         'value' => $warehouseUserId,
+      ];
+    }
+    if (!empty($config['limit_to_website'])) {
+      $connection = iform_get_connection_details();
+      $clauses[] = [
+        'query_type' => 'term',
+        'field' => 'metadata.website.id',
+        'value' => $connection['website_id'],
       ];
     }
     return $clauses;
