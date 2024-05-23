@@ -81,6 +81,7 @@ class IndiciaRecorderInfoBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    iform_load_helpers(['helper_base']);
     $data = [];
     $config = $this->getConfiguration();
     // Use the account if viewing a profile, else the current user.
@@ -99,11 +100,20 @@ class IndiciaRecorderInfoBlock extends IndiciaBlockBase {
     if ($config['include_member_since']) {
       $data['Member since'] = date('d/m/Y', $user->getCreatedTime());
     }
-    if ($config['include_training']) {
-
+    if ($config['include_training'] && isset($user->field_training) && $user->field_training->value === '1') {
+      \helper_base::add_resource('fontawesome');
+      $data['Training mode'] = '<i class="fas fa-check"></i>';
     }
-    if ($config['include_verifier_role_info']) {
-
+    if ($config['include_verifier_role_info'] && ($user->hasRole('verifier') || $user->hasRole('verification'))) {
+      $verificationFilters = $this->getVerificationFilters($user->field_indicia_user_id->value);
+      if (count($verificationFilters) > 0) {
+        $filterHtml = '<p>' . $this->t('This user verifies records in the following sets of data:') . '</p>';
+        $filterHtml .= '<u><li>' . implode('</li><li>', $verificationFilters) . '</li></ul>';
+        $data['Verification'] = $filterHtml;
+      }
+    }
+    if (\Drupal::currentUser()->hasRole('administrator')) {
+      $data['Indicia user ID'] = $user->field_indicia_user_id->value;
     }
     $build = [
       '#title' => 'Recorder info',
@@ -112,6 +122,36 @@ class IndiciaRecorderInfoBlock extends IndiciaBlockBase {
     ];
     return $build;
 
+  }
+
+  /**
+   * Retrieve information on the user's verification context filters.
+   *
+   * @param [type] $userId
+   *   User's warehouse ID.
+   *
+   * @return array
+   *   List of filter names.
+   */
+  private function getVerificationFilters($userId) {
+    iform_load_helpers(['report_helper']);
+    $r = [];
+    $connection = iform_get_connection_details();
+    $readAuth = \report_helper::get_read_auth($connection['website_id'], $connection['password']);
+    $filters = \report_helper::get_report_data([
+      'dataSource' => 'library/filters/filters_list_minimal',
+      'readAuth' => $readAuth,
+      'caching' => TRUE,
+      'extraParams' => [
+        'filter_sharing_mode' => 'V',
+        'defines_permissions' => 't',
+        'filter_user_id' => $userId,
+      ],
+    ]);
+    foreach ($filters as $filter) {
+      $r[] = $filter['title'];
+    }
+    return $r;
   }
 
 }
