@@ -4,6 +4,7 @@ namespace Drupal\indicia_blocks\Plugin\Block;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\Entity\User;
+use Drupal\user\UserInterface;
 
 /**
  * Provides a 'Recorder Info' block.
