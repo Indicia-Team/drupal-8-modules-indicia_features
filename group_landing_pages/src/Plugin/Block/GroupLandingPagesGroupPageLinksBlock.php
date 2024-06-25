@@ -27,14 +27,26 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     }
     $conn = iform_get_connection_details();
     iform_load_helpers(['helper_base']);
+    global $indicia_templates;
+    $groupPageLinks = \ElasticsearchReportHelper::getGroupPageLinks([
+      'id' => $config['group_id'],
+      'title' => $config['group_title'],
+      'implicit_record_inclusion' => $config['implicit_record_inclusion'],
+      'joining_method' => $config['joining_method'],
+    ], [
+      'readAuth' => \helper_base::get_read_auth($conn['website_id'], $conn['password']),
+      'joinLink' => TRUE,
+      'linkClass' => $indicia_templates['buttonHighlightedClass'],
+    ], $config['member']);
+    $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get('Next steps') . ':</p>' . $groupPageLinks;
     return [
       // @todo Set group member param properly.
-      '#markup' => Markup::create(\ElasticsearchReportHelper::getGroupPageLinks([
-        'id' => $config['group_id'],
-        'implicit_record_inclusion' => $config['implicit_record_inclusion'],
-      ], [
-        'readAuth' => \helper_base::get_read_auth($conn['website_id'], $conn['password']),
-      ], $config['member'])),
+      '#markup' => Markup::create($content),
+      '#attached' => [
+        'library' => [
+          'group_landing_pages/page-links-block',
+        ],
+      ],
     ];
   }
 

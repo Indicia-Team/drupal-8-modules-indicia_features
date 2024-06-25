@@ -3,7 +3,6 @@
 namespace Drupal\group_landing_pages\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Render\Markup;
 
 class GroupLandingPagesController extends ControllerBase {
 
@@ -28,17 +27,39 @@ class GroupLandingPagesController extends ControllerBase {
       'implicit' => $group['implicit_record_inclusion'],
       'readAuth' => $readAuth,
     ], FALSE);
-    $member = group_authorise_group_id($group['id'], $readAuth, FALSE);
+    $membership = \helper_base::get_population_data([
+      'table' => 'groups_user',
+      'extraParams' => $readAuth + [
+        'group_id' => $group['id'],
+        'user_id' => hostsite_get_user_field('indicia_user_id'),
+      ],
+      'nocache' => TRUE,
+    ]);
+    $isMember = count($membership) > 0 && $membership[0]['pending'] === 'f';
+    // @todo Should add a field groups.discoverable, instead of using joining
+    // method to control view access.
+    if ($group['joining_method_raw'] !== 'P' && $group['joining_method_raw'] !== 'R' && !$isMember) {
+      $this->messenger()->addWarning($this->t('The link you have followed is to a group you do not have access to view.'));
+      hostsite_goto_page('<front>');
+      return [];
+    }
     // Build array points to the twig template via a theme hook, plus supplies
     // some variables.
     $build = [
       '#group_id' => $group['id'],
-      '#title' => $group['title'],
+      '#group_title' => $group['title'],
       '#theme' => 'group_landing_page',
       '#description' => $group['description'],
       '#group_type' => $group['group_type_term'],
+      '#joining_method' => $group['joining_method_raw'],
       '#implicit_record_inclusion' => $group['implicit_record_inclusion'],
-      '#member' => $member,
+      '#member' => $isMember,
+      '#pending' => count($membership) > 0 && $membership[0]['pending'] === 't',
+      '#attached' => [
+        'library' => [
+          'group_landing_pages/core',
+        ],
+      ],
     ];
     return $build;
   }

@@ -12,9 +12,12 @@ function group_landing_pages_theme($existing, $type, $theme, $path) {
         'group_id' => '',
         'group_title' => '',
         'group_type' => '',
+        'joining_method' => '',
         'description' => '',
         'implicit_record_inclusion' => '',
         'member' => '',
+        'pending' => '',
+        'discoverable' => '',
       ],
     ],
   ];
