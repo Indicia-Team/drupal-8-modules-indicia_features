@@ -1,0 +1,10 @@
+core:
+  version: VERSION
+  css:
+    component:
+      css/group_landing_pages.css: {}
+page-links-block:
+  version: VERSION
+  css:
+    component:
+      css/page_links_block.css: {}
