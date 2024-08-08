@@ -9,7 +9,7 @@ use Drupal\Core\Render\Markup;
  * Provides a 'Recent Elasticsearch photos' block.
  *
  * @Block(
- *   id = "es_recent_photos",
+ *   id = "es_recent_photos_block",
  *   admin_label = @Translation("Recent Elasticsearch photos block"),
  * )
  */
@@ -79,7 +79,8 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
     ]);
     $r .= \ElasticsearchReportHelper::cardGallery([
       'id' => 'photo-cards-' . self::$blockCount,
-      'source' => 'es-photos- ' . self::$blockCount,
+      'class' => 'horizontal',
+      'source' => 'es-photos-' . self::$blockCount,
       'columns' => [
         [
           'field' => '#taxon_label#',
