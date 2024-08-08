@@ -6,12 +6,16 @@
  * Available variables:
  * - group_id: Group unique ID.
  * - group_title: Title of the group.
- * - group_description: Description given for the group.
+ * - description: Description given for the group.
  * - group_type: name of the group type (e.g. Local project, Bioblitz).
  * - joining_method: group joining method.
- * - $implicit_record_inclusion: record inclusion mode for group report filters.
- * - $member - true if the current user is a member.
- * - $pending - true if the current user is pending membership.
+ * - implicit_record_inclusion: record inclusion mode for group report filters.
+ * - member - true if the current user is a member of the group.
+ * - admin - true if the current user is an administrator of the group.
+ * - pending - true if the current user is pending membership.
+ * - can_view_blog - true if blogging is enabled for this group.
+ * - can_post_blog - true if the current user is allowed to add blog posts for this group.
+ * - editPath - the path to the group edit page.
  */
 #}
 <div class="group-landing-page-content">
@@ -26,12 +30,34 @@
         joining_method: joining_method,
         implicit_record_inclusion: implicit_record_inclusion,
         member: member,
-        pending: pending
+        admin: admin,
+        pending: pending,
+        edit_alias: edit_alias
       }) }}
     </div>
   </div>
   <div class="row">
+    <div class="col-md-12">
+      {{ drupal_block('es_recent_photos_block', {unverified_records: true}) }}
+    </div>
+  </div>
+  <div class="row">
     <div class="col-md-6">
+      {% if can_view_blog %}
+        {% set blog_post_count = drupal_view_result('group_blog_entries', 'block_1', group_id)|length %}
+        {% if blog_post_count > 0 or can_post_blog %}
+          {{ '<h3>Posts</h3>' }}
+          {% if blog_post_count > 0 %}
+            {{ drupal_view('group_blog_entries', 'block_1', group_id) }}
+            <p><a href="{{ url('<current>') }}/blog">View more...</a></p>
+          {% else %}
+            <p>There are no posts yet for {{ group_title }}.<p>
+          {% endif %}
+          {% if can_post_blog %}
+            <a class="btn btn-primary use-ajax" href="{{ path('group_landing_pages.modal_blog_form',  {'group_id': group_id}) }}">Add a new post</a>
+          {% endif %}
+        {% endif %}
+      {% endif %}
       <h3>Recent records</h3>
       {{ drupal_block('es_recent_records_block', {unverified_records: true}) }}
     </div>

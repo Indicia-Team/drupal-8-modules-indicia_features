@@ -12,6 +12,7 @@ class GroupLandingPagesController extends ControllerBase {
    * @todo Group blog
    */
   public function groupHome($title) {
+    $config = \Drupal::config('group_landing_pages.settings');
     $groups = $this->getGroupFromTitle($title);
     if (count($groups) !== 1) {
       $this->messenger()->addWarning($this->t('The link you have followed does not refer to a unique group name.'));
@@ -35,7 +36,9 @@ class GroupLandingPagesController extends ControllerBase {
       ],
       'nocache' => TRUE,
     ]);
+
     $isMember = count($membership) > 0 && $membership[0]['pending'] === 'f';
+    $isAdmin = $isMember && $membership[0]['administrator'] === 't';
     // @todo Should add a field groups.discoverable, instead of using joining
     // method to control view access.
     if ($group['joining_method_raw'] !== 'P' && $group['joining_method_raw'] !== 'R' && !$isMember) {
@@ -45,7 +48,7 @@ class GroupLandingPagesController extends ControllerBase {
     }
     // Build array points to the twig template via a theme hook, plus supplies
     // some variables.
-    $build = [
+    return [
       '#group_id' => $group['id'],
       '#group_title' => $group['title'],
       '#theme' => 'group_landing_page',
@@ -53,15 +56,45 @@ class GroupLandingPagesController extends ControllerBase {
       '#group_type' => $group['group_type_term'],
       '#joining_method' => $group['joining_method_raw'],
       '#implicit_record_inclusion' => $group['implicit_record_inclusion'],
+      '#admin' => $isAdmin,
       '#member' => $isMember,
       '#pending' => count($membership) > 0 && $membership[0]['pending'] === 't',
+      '#can_view_blog' => !empty($group['post_blog_permission']),
+      '#can_post_blog' => ($group['post_blog_permission'] === 'A' && $isAdmin) || ($group['post_blog_permission'] === 'M' && $isMember),
+      '#edit_alias' => $config->get('group_edit_alias'),
       '#attached' => [
         'library' => [
+          'core/drupal.dialog.ajax',
           'group_landing_pages/core',
+          'group_landing_pages/blog_entries_view',
         ],
       ],
     ];
-    return $build;
+  }
+
+  /**
+   * Controller for the blog overview page.
+   *
+   * Returns the group blog entries view, filtered to the correct group.
+   *
+   * @param string $title
+   *   Blog title from the URL.
+   *
+   * @return array
+   *   View build array.
+   */
+  public function groupBlog($title) {
+    $groups = $this->getGroupFromTitle($title);
+    return [
+      'view' => [
+        '#type' => 'view',
+        '#name' => 'group_blog_entries',
+        '#display_id' => 'page_1',
+        '#arguments' => [
+          $groups[0]['id'],
+        ],
+      ],
+    ];
   }
 
   /**

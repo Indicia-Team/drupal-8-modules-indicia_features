@@ -28,6 +28,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     $conn = iform_get_connection_details();
     iform_load_helpers(['helper_base']);
     global $indicia_templates;
+    $membership = $config['admin'] ? \GroupMembership::Admin : ($config['member'] ? \GroupMembership::Member : \GroupMembership::NonMember);
     $groupPageLinks = \ElasticsearchReportHelper::getGroupPageLinks([
       'id' => $config['group_id'],
       'title' => $config['group_title'],
@@ -37,10 +38,10 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       'readAuth' => \helper_base::get_read_auth($conn['website_id'], $conn['password']),
       'joinLink' => TRUE,
       'linkClass' => $indicia_templates['buttonHighlightedClass'],
-    ], $config['member']);
+      'editPath' => ltrim($config['edit_alias'], '/'),
+    ], $membership);
     $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get('Next steps') . ':</p>' . $groupPageLinks;
     return [
-      // @todo Set group member param properly.
       '#markup' => Markup::create($content),
       '#attached' => [
         'library' => [
