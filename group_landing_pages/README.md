@@ -1,7 +1,8 @@
 Provides landing pages for groups (sometimes known as activities or projects). After installation,
 the landing page for any group can be found at the URL `/groups/<group title>`, where
 `<group title>` is replaced by the title of the group in lowercase and with spaces replaced by
-hyphens.
+hyphens. Group landing pages arae themeable using the Drupal templating system and can include
+various reports and data outputs built using group data as well as a blog of news about the group.
 
 If you are using this module to provide access to a public landing page for groups, that users who
 are not logged in can access, then ensure that you set the "Elasticsearch all records permission"
@@ -62,3 +63,6 @@ embedded in templates, including the following:
 The Group Landing Pages module also provides the following blocks:
 * group_landing_pages_group_page_links - a list of links to pages that have been linked to the
   group.
+
+Refer to the provided template (templates/group-landing-page.html.twig) for and example of how to
+include the group blog entries view on the page.
