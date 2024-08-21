@@ -142,30 +142,32 @@ function group_landing_pages_node_access_records($node) {
  * those for any group they are admin for.
  */
 function group_landing_pages_node_grants($account, $op) {
-  iform_load_helpers(['helper_base']);
-  $conn = iform_get_connection_details();
-  $readAuth = helper_base::get_read_auth($conn['website_id'], $conn['password']);
-  // Load the groups the user is admin of.
-  $groups = helper_base::get_population_data([
-    'table' => 'groups_user',
-    'extraParams' => $readAuth + [
-      'columns' => 'group_id',
-      'user_id' => hostsite_get_user_field('indicia_user_id'),
-      'administrator' => 't',
-      'pending' => 'f',
-    ],
-  ]);
-  // Group IDs user is admin for.
-  $groupIds = [];
-  foreach ($groups as $group) {
-    $groupIds[] = $group['group_id'];
-  }
   $grants = [];
   // All users can view blog entries.
   $grants['group_blog_view'] = [0];
-  // Authors can edit.
-  $grants['group_blog_author'] = [$account->id()];
-  // Group admins can edit.
-  $grants['group_admin'] = $groupIds;
+  if (hostsite_get_user_field('indicia_user_id')) {
+    iform_load_helpers(['helper_base']);
+    $conn = iform_get_connection_details();
+    $readAuth = helper_base::get_read_auth($conn['website_id'], $conn['password']);
+    // Load the groups the user is admin of.
+    $groups = helper_base::get_population_data([
+      'table' => 'groups_user',
+      'extraParams' => $readAuth + [
+        'columns' => 'group_id',
+        'user_id' => hostsite_get_user_field('indicia_user_id'),
+        'administrator' => 't',
+        'pending' => 'f',
+      ],
+    ]);
+    // Group IDs user is admin for.
+    $groupIds = [];
+    foreach ($groups as $group) {
+      $groupIds[] = $group['group_id'];
+    }
+    // Authors can edit.
+    $grants['group_blog_author'] = [$account->id()];
+    // Group admins can edit.
+    $grants['group_admin'] = $groupIds;
+  }
   return $grants;
 }
