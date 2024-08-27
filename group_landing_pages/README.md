@@ -39,11 +39,12 @@ contributed module to allow blocks to be embedded into the templates, for exampl
 In most cases you will want to specify the unverified_records config option so that unverified
 records are included. A number of blocks are provided by the Indicia Blocks module which can be
 embedded in templates, including the following:
+* es_accumulation_chart_block
 * es_all_records_map_block - available variables:
   * `base_layer` - options are OpenStreetMap, OpenTopoMap, GoogleSatellite, GoogleRoadMap,
     GoogleTerrain, GoogleHybrid.
   * `map_layer_type` - options are circle, square, heat, geohash.
-* es_phenology_graph_block
+* es_phenology_chart_block
 * es_recent_photos - available variables:
   * `limit` (count of photos, integer)
 * es_recent_records_block - available variables:
@@ -53,6 +54,7 @@ embedded in templates, including the following:
 * es_records_by_verification_status_pie_block - available options:
   * `level_2` - (1 or 0, should level 2 verification decision detail be included as a doughnut
     ring?).
+* es_records_by_year_chart_block
 * es_top_recorders_table_block - available variables:
   * `limit` (count of rows, integer)
   * `include_records` (1 or 0)

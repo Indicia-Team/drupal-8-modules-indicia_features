@@ -16,23 +16,39 @@ use Drupal\views\ViewExecutable;
  * Declare a template for the group home pages.
  */
 function group_landing_pages_theme($existing, $type, $theme, $path) {
+  $defaultVariables = [
+    'group_id' => '',
+    'group_title' => '',
+    'group_type' => '',
+    'joining_method' => '',
+    'description' => '',
+    'implicit_record_inclusion' => '',
+    'admin' => '',
+    'member' => '',
+    'pending' => '',
+    'can_view_blog' => '',
+    'can_post_blog' => '',
+    'discoverable' => '',
+    'edit_alias' => '',
+    'species_details_alias' => '',
+    'species_details_within_group_alias' => '',
+  ];
   return [
-    'group_landing_page' => [
-      'variables' => [
-        'group_id' => '',
-        'group_title' => '',
-        'group_type' => '',
-        'joining_method' => '',
-        'description' => '',
-        'implicit_record_inclusion' => '',
-        'admin' => '',
-        'member' => '',
-        'pending' => '',
-        'can_view_blog' => '',
-        'can_post_blog' => '',
-        'discoverable' => '',
-        'edit_alias' => '',
-      ],
+    'group_landing_page_tabs' => [
+      'variables' => array_merge([
+        'overview_tab_content' => '',
+        'progress_tab_content' => '',
+        'taxa_tab_content' => '',
+      ], $defaultVariables),
+    ],
+    'group_landing_page_overview' => [
+      'variables' => $defaultVariables,
+    ],
+    'group_landing_page_progress' => [
+      'variables' => $defaultVariables,
+    ],
+    'group_landing_page_taxa' => [
+      'variables' => $defaultVariables,
     ],
   ];
 }
@@ -41,15 +57,67 @@ function group_landing_pages_theme($existing, $type, $theme, $path) {
  * Implements hook_theme_suggestions_HOOK().
  *
  * Provides suggestions for template names:
- * * group-landing-page--type-<type name>, e.g.
- *   group-landing-page--type-bioblitz.html.twig.
- * * group-landing-page--id-<id>, e.g. group-landing-page--id-123.html.twig.
+ * * group-landing-page-tabs--type-<type name>, e.g.
+ *   group-landing-page-tabs--type-bioblitz.html.twig.
+ * * group-landing-page-tabs--id-<id>, e.g.
+ *   group-landing-page-tabs--id-123.html.twig.
  */
-function group_landing_pages_theme_suggestions_group_landing_page(array $variables) {
+function group_landing_pages_theme_suggestions_group_landing_page_tabs(array $variables) {
   $suggestions = [];
   // Lowest priority (least specific) first.
-  $suggestions[] = 'group_landing_page__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
-  $suggestions[] = "group_landing_page__id_$variables[group_id]";
+  $suggestions[] = 'group_landing_page_tabs__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
+  $suggestions[] = "group_landing_page_tabs__id_$variables[group_id]";
+  return $suggestions;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ *
+ * Provides suggestions for template names:
+ * * group-landing-page-overview--type-<type name>, e.g.
+ *   group-landing-page-overview--type-bioblitz.html.twig.
+ * * group-landing-page-overview--id-<id>, e.g.
+ *   group-landing-page-overview--id-123.html.twig.
+ */
+function group_landing_pages_theme_suggestions_group_landing_page_overview(array $variables) {
+  $suggestions = [];
+  // Lowest priority (least specific) first.
+  $suggestions[] = 'group_landing_page_overview__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
+  $suggestions[] = "group_landing_page_overview__id_$variables[group_id]";
+  return $suggestions;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ *
+ * Provides suggestions for template names:
+ * * group-landing-page-progress--type-<type name>, e.g.
+ *   group-landing-page-progress--type-bioblitz.html.twig.
+ * * group-landing-page-progress--id-<id>, e.g.
+ *   group-landing-page-progress--id-123.html.twig.
+ */
+function group_landing_pages_theme_suggestions_group_landing_page_progress(array $variables) {
+  $suggestions = [];
+  // Lowest priority (least specific) first.
+  $suggestions[] = 'group_landing_page_progress__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
+  $suggestions[] = "group_landing_page_overview__id_$variables[group_id]";
+  return $suggestions;
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ *
+ * Provides suggestions for template names:
+ * * group-landing-page-taxa--type-<type name>, e.g.
+ *   group-landing-page-taxa--type-bioblitz.html.twig.
+ * * group-landing-page-taxa--id-<id>, e.g.
+ *   group-landing-page-taxa--id-123.html.twig.
+ */
+function group_landing_pages_theme_suggestions_group_landing_page_taxa(array $variables) {
+  $suggestions = [];
+  // Lowest priority (least specific) first.
+  $suggestions[] = 'group_landing_page_taxa__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
+  $suggestions[] = "group_landing_page_taxa__id_$variables[group_id]";
   return $suggestions;
 }
 

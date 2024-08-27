@@ -40,7 +40,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       'linkClass' => $indicia_templates['buttonHighlightedClass'],
       'editPath' => ltrim($config['edit_alias'], '/'),
     ], $membership);
-    $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get('Next steps') . ':</p>' . $groupPageLinks;
+    $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get('Activity links') . ':</p>' . $groupPageLinks;
     return [
       '#markup' => Markup::create($content),
       '#attached' => [

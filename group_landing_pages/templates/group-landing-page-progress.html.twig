@@ -1,0 +1,65 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a group landing page overview tab.
+ *
+ * Available variables:
+ * - group_id: Group unique ID.
+ * - group_title: Title of the group.
+ * - description: Description given for the group.
+ * - group_type: name of the group type (e.g. Local project, Bioblitz).
+ * - joining_method: group joining method.
+ * - implicit_record_inclusion: record inclusion mode for group report filters.
+ * - member - true if the current user is a member of the group.
+ * - admin - true if the current user is an administrator of the group.
+ * - pending - true if the current user is pending membership.
+ * - can_view_blog - true if blogging is enabled for this group.
+ * - can_post_blog - true if the current user is allowed to add blog posts for
+ *    this group.
+ * - edit_alias - the path to the group edit page.
+ * - species_details_alias - the path to the species details page.
+ * - species_details_within_group_alias - the path to the version of the
+ *   species details page used when showing species data for a single group.
+ */
+#}
+
+<div class="row">
+  <div class="col-md-6">
+    <h3>All records per year</h3>
+    {{ drupal_block('es_records_by_year_chart_block', {unverified_records: true}) }}
+  </div>
+  <div class="col-md-6">
+    <h3>All records per month</h3>
+    {{ drupal_block('es_phenology_chart_block', {unverified_records: true}) }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <h3>Accumulation of species</h3>
+    {{ drupal_block('es_accumulation_graph_block', {unverified_records: true, show: 'taxa'}) }}
+  </div>
+  <div class="col-md-6">
+    <h3>Accumulation of records</h3>
+    {{ drupal_block('es_accumulation_graph_block', {unverified_records: true, show: 'counts'}) }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <h3>Most frequently recorded taxa @TODO</h3>
+    {{ drupal_block('es_records_by_taxon_group_pie_block', {unverified_records: true}) }}
+  </div>
+  <div class="col-md-6">
+    <h3>Top contributors</h3>
+    {{ drupal_block('es_top_recorders_table_block', {unverified_records: true}) }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <h3>Taxon groups</h3>
+    {{ drupal_block('es_records_by_taxon_group_pie_block', {unverified_records: true}) }}
+  </div>
+  <div class="col-md-6">
+    <h3>Verification status</h3>
+    {{ drupal_block('es_records_by_verification_status_pie_block', {unverified_records: true}) }}
+  </div>
+</div>

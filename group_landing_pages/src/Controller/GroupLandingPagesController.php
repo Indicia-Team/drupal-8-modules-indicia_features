@@ -36,7 +36,6 @@ class GroupLandingPagesController extends ControllerBase {
       ],
       'nocache' => TRUE,
     ]);
-
     $isMember = count($membership) > 0 && $membership[0]['pending'] === 'f';
     $isAdmin = $isMember && $membership[0]['administrator'] === 't';
     // @todo Should add a field groups.discoverable, instead of using joining
@@ -46,12 +45,15 @@ class GroupLandingPagesController extends ControllerBase {
       hostsite_goto_page('<front>');
       return [];
     }
+    // Make logo available to JS so it can add to header.
+    \helper_base::$indiciaData['group'] = $group;
+    \helper_base::$indiciaData['logoPath'] = $group['logo_path'];
+    \helper_base::$indiciaData['logoSelector'] = $config->get('logo_selector') ?? '[rel="home"][class*=logo]';
     // Build array points to the twig template via a theme hook, plus supplies
     // some variables.
-    return [
+    $defaultVariables = [
       '#group_id' => $group['id'],
       '#group_title' => $group['title'],
-      '#theme' => 'group_landing_page',
       '#description' => $group['description'],
       '#group_type' => $group['group_type_term'],
       '#joining_method' => $group['joining_method_raw'],
@@ -62,6 +64,20 @@ class GroupLandingPagesController extends ControllerBase {
       '#can_view_blog' => !empty($group['post_blog_permission']),
       '#can_post_blog' => ($group['post_blog_permission'] === 'A' && $isAdmin) || ($group['post_blog_permission'] === 'M' && $isMember),
       '#edit_alias' => $config->get('group_edit_alias'),
+      '#species_details_alias' => $config->get('species_details_alias'),
+      '#species_details_within_group_alias' => $config->get('species_details_within_group_alias'),
+    ];
+    return array_merge($defaultVariables, [
+      '#theme' => 'group_landing_page_tabs',
+      '#overview_tab_content' => array_merge([
+        '#theme' => 'group_landing_page_overview',
+      ], $defaultVariables),
+      '#progress_tab_content' => array_merge([
+        '#theme' => 'group_landing_page_progress',
+      ], $defaultVariables),
+      '#taxa_tab_content' => array_merge([
+        '#theme' => 'group_landing_page_taxa',
+      ], $defaultVariables),
       '#attached' => [
         'library' => [
           'core/drupal.dialog.ajax',
@@ -69,7 +85,7 @@ class GroupLandingPagesController extends ControllerBase {
           'group_landing_pages/blog_entries_view',
         ],
       ],
-    ];
+    ]);
   }
 
   /**

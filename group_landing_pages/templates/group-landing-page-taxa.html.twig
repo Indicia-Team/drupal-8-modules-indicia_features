@@ -1,0 +1,32 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a group landing page taxa tab.
+ *
+ * Available variables:
+ * - group_id: Group unique ID.
+ * - group_title: Title of the group.
+ * - description: Description given for the group.
+ * - group_type: name of the group type (e.g. Local project, Bioblitz).
+ * - joining_method: group joining method.
+ * - implicit_record_inclusion: record inclusion mode for group report filters.
+ * - member - true if the current user is a member of the group.
+ * - admin - true if the current user is an administrator of the group.
+ * - pending - true if the current user is pending membership.
+ * - can_view_blog - true if blogging is enabled for this group.
+ * - can_post_blog - true if the current user is allowed to add blog posts for
+ *    this group.
+ * - edit_alias - the path to the group edit page.
+ * - species_details_alias - the path to the species details page.
+ * - species_details_within_group_alias - the path to the version of the
+ *   species details page used when showing species data for a single group.
+ */
+#}
+
+<h3>Most recorded species</h3>
+{{ drupal_block('es_species_table_block', {
+    unverified_records: true,
+    species_details_alias: species_details_alias,
+    species_details_within_group_alias: species_details_within_group_alias
+  })
+}}

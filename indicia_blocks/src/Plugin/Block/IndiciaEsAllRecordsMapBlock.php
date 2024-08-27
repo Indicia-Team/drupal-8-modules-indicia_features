@@ -35,8 +35,8 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
     }
     $form['base_layer'] = [
       '#type' => 'select',
-      '#title' => t('Base layer'),
-      '#description' => t('Select the base layer to use.'),
+      '#title' => $this->t('Base layer'),
+      '#description' => $this->t('Select the base layer to use.'),
       '#options' => $baseMapOptions,
     ];
     $form['map_layer_type'] = [

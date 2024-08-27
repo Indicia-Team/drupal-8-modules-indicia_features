@@ -6,21 +6,34 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
- * Provides an 'Elasticsearch phenology graph' block.
+ * Provides an 'Elasticsearch accumulation graph' block.
  *
  * @Block(
- *   id = "es_phenology_graph_block",
- *   admin_label = @Translation("Elasticsearch phenology graph block"),
+ *   id = "es_accumulation_graph_block",
+ *   admin_label = @Translation("Elasticsearch accumulation graph block"),
  * )
  */
-class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
+class IndiciaEsAccumulationChartBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {
     $form = parent::blockForm($form, $form_state);
+    // Retrieve existing configuration for this block.
+    $config = $this->getConfiguration();
     $this->addDefaultEsFilterFormCtrls($form);
+    $form['show'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Show'),
+      '#description' => $this->t('Show taxa, record counts, or both.'),
+      '#options' => [
+        'both' => $this->t('Both taxa and record count accumulation'),
+        'taxa' => $this->t('Accumulation of taxa'),
+        'counts' => $this->t('Accumulation of record counts'),
+      ],
+      '#default_value' => $config['show'] ?? 'both',
+    ];
     return $form;
   }
 
@@ -30,6 +43,7 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
   public function blockSubmit($form, FormStateInterface $form_state) {
     parent::blockSubmit($form, $form_state);
     $this->saveDefaultEsFilterFormCtrls($form_state);
+    $this->setConfigurationValue('show', $form_state->getValue('show'));
   }
 
   /**
@@ -47,23 +61,38 @@ class IndiciaEsPhenologyGraph extends IndiciaBlockBase {
     }
     $config = $this->getConfiguration();
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'phenologyGraphSource-' . self::$blockCount,
+      'id' => 'accumulationChartSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
+      // Want it to be by year/week/taxa with count of records in each bucket.
       'aggregation' => [
-        'by_month' => [
+        'by_week' => [
           'terms' => [
-            'field' => 'event.month',
-            'size' => 12,
+            'field' => 'event.week',
+          ],
+          'aggs' => [
+            'by_taxon' => [
+              'terms' => [
+                'field' => 'taxon.accepted_taxon_id',
+              ],
+              'aggs' => [
+                'by_year' => [
+                  'terms' => [
+                    'field' => 'event.year',
+                  ],
+                ],
+              ],
+            ],
           ],
         ],
       ],
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'numericFilters' => ['event.year' => (date("Y") - 1) . '-' . date("Y")],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'id' => 'phenologyGraph-' . self::$blockCount,
-      'source' => 'phenologyGraphSource-' . self::$blockCount,
-      'functionName' => 'handlePhenologyGraphResponse',
+      'id' => 'accumulationChart-' . self::$blockCount,
+      'source' => 'accumulationChartSource-' . self::$blockCount,
+      'functionName' => 'handleAccumulationChartResponse' . ucfirst($config['show'] ?? 'both'),
       'class' => 'indicia-block-visualisation',
     ]);
 

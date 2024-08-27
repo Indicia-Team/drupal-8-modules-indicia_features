@@ -1,1 +1,2 @@
 group_edit_alias: /groups/edit
+logo_selector: '[rel="home"][class*=logo]'
