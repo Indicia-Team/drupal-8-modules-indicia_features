@@ -63,8 +63,8 @@ embedded in templates, including the following:
 * es_totals_block
 
 The Group Landing Pages module also provides the following blocks:
-* group_landing_pages_group_page_links - a list of links to pages that have been linked to the
-  group.
+* group_landing_pages_group_page_links - a list of links to pages related to the group which the
+  user has access to.
 
-Refer to the provided template (templates/group-landing-page.html.twig) for and example of how to
-include the group blog entries view on the page.
+Refer to the provided template (templates/group-landing-page-overview.html.twig) for and example of
+how to include the group blog entries view on the page.
