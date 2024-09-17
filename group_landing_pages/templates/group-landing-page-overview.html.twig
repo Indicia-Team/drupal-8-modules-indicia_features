@@ -10,12 +10,25 @@
  * - group_type: name of the group type (e.g. Local project, Bioblitz).
  * - joining_method: group joining method.
  * - implicit_record_inclusion: record inclusion mode for group report filters.
+ * - container: flag indicating that this is a container group.
+ * - contained_by_group_id: if this group is contained by and inherits from
+ *   another group, then ID of that group.
+ * - contained_by_group_title: if this group is contained by and inherits from
+ *   another group, then title of that group.
+ * - contained_by_group_logo_path: if this group is contained by and inherits from
+ *   another group, then logo path of that group.
  * - member - true if the current user is a member of the group.
  * - admin - true if the current user is an administrator of the group.
  * - pending - true if the current user is pending membership.
  * - can_view_blog - true if blogging is enabled for this group.
  * - can_post_blog - true if the current user is allowed to add blog posts for
  *    this group.
+ * - group_label - label used to describe a standard group, e.g. group or
+ *   project.
+ * - container_group_label - label used to describe a container group, e.g.
+ *   project.
+ * - contained_group_label - label used to describe a contained group, e.g.
+ *   sub-group or project-activity.
  * - edit_alias - the path to the group edit page.
  * - species_details_alias - the path to the species details page.
  * - species_details_within_group_alias - the path to the version of the
@@ -34,10 +47,12 @@
         group_title: group_title,
         joining_method: joining_method,
         implicit_record_inclusion: implicit_record_inclusion,
+        container: container,
         member: member,
         admin: admin,
         pending: pending,
-        edit_alias: edit_alias
+        edit_alias: edit_alias,
+        contained_group_label: contained_group_label
       }) }}
     </div>
   </div>
