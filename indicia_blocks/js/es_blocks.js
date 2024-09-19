@@ -236,6 +236,23 @@ jQuery(document).ready(function($) {
   };
 
   /**
+   * Handle the AJAX ES response for the phenology taxon group pie data.
+   */
+  indiciaFns.handleRecordsBySpeciesPieResponse = function(div, sourceSettings, response) {
+    let pieSectionsData = [];
+    response.aggregations.by_species.buckets.forEach(function (w) {
+      pieSectionsData.push({
+        name: w.key,
+        number: w.doc_count
+      });
+    });
+    brccharts.pie({
+      selector: '#' + div.id,
+      data: pieSectionsData
+    })
+  };
+
+  /**
    * Handle the AJAX ES response for the the verification status pie or donut data.
    */
   indiciaFns.handleRecordsByVerificationStatusPieResponse = function(div, sourceSettings, response) {
