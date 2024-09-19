@@ -13,7 +13,7 @@ use Drupal\Core\Render\Markup;
  *   admin_label = @Translation("Elasticsearch records by taxon group pie"),
  * )
  */
-class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
+class IndiciaEsRecordsByTaxonGroupPieBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
