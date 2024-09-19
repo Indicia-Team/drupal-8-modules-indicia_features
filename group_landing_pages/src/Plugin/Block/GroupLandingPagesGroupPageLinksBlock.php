@@ -19,14 +19,13 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    iform_load_helpers(['ElasticsearchReportHelper']);
+    iform_load_helpers(['helper_base', 'ElasticsearchReportHelper']);
     $config = $this->getConfiguration();
     if (empty($config['group_id'])) {
       \Drupal::messenger()->addWarning(t('The Group Landing Pages Group Page Links block should only be used by the Group Landing Pages module.'));
       return [];
     }
     $conn = iform_get_connection_details();
-    iform_load_helpers(['helper_base']);
     global $indicia_templates;
     $membership = $config['admin'] ? \GroupMembership::Admin : ($config['member'] ? \GroupMembership::Member : \GroupMembership::NonMember);
     $readAuth = \helper_base::get_read_auth($conn['website_id'], $conn['password']);
@@ -48,10 +47,11 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     if ($config['container'] && $config['include_home_link']) {
       $groupUrlPath = trim(preg_replace('/[^a-z0-9-]/', '', str_replace(' ', '-', strtolower($config['group_title']))), '-');
       $containerHomeButtonCaption = $this->t('@title home', ['@title' => $config['group_title']]);
-      $linksHtml[] = "<li><a href=\"/groups/$groupUrlPath\" class=\"$indicia_templates[buttonHighlightedClass]\">$containerHomeButtonCaption</a></li>";
+      $linksHtml[] = "<li><a href=\"/groups/$groupUrlPath\" class=\"$indicia_templates[buttonHighlightedClass]\"><i class=\"fas fa-home\"></i> $containerHomeButtonCaption</a></li>";
     }
     foreach ($groupPageLinks as $href => $linkInfo) {
-      $linksHtml[] = "<li><a href=\"$href\" class=\"$indicia_templates[buttonHighlightedClass]\">$linkInfo[icon]$linkInfo[label]</a></li>";
+      $icon = empty($linkInfo['icon']) ? '' : "$linkInfo[icon] ";
+      $linksHtml[] = "<li><a href=\"$href\" class=\"$indicia_templates[buttonHighlightedClass]\">$icon$linkInfo[label]</a></li>";
     }
     $groupTypeLabel = ucfirst(!$config['container'] && $config['contained_by_group_id'] ? $config['contained_group_label'] : $config['group_label']);
     $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get("$groupTypeLabel links") . ':</p><ul>' . implode("\n", $linksHtml) . '</ul>';
