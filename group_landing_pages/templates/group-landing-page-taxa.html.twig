@@ -15,8 +15,13 @@
  *   another group, then ID of that group.
  * - contained_by_group_title: if this group is contained by and inherits from
  *   another group, then title of that group.
- * - contained_by_group_logo_path: if this group is contained by and inherits from
- *   another group, then logo path of that group.
+ * - contained_by_group_description: if this group is contained by and inherits
+ *   from another group, then description of that group.
+ * - contained_by_group_logo_path: if this group is contained by and inherits
+ *   from another group, then logo path of that group.
+ * - contained_by_group_implicit_record_inclusion: if this group is contained
+ *   by and inherits from another group, then implicit_record_inclusion setting
+ *   of that group.
  * - member - true if the current user is a member of the group.
  * - admin - true if the current user is an administrator of the group.
  * - pending - true if the current user is pending membership.
@@ -33,6 +38,8 @@
  * - species_details_alias - the path to the species details page.
  * - species_details_within_group_alias - the path to the version of the
  *   species details page used when showing species data for a single group.
+ * - warehouse_url - URL the warehouse is accessed from (including trailing
+ *   slash).
  */
 #}
 

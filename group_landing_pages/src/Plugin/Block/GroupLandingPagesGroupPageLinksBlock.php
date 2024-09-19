@@ -29,6 +29,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     iform_load_helpers(['helper_base']);
     global $indicia_templates;
     $membership = $config['admin'] ? \GroupMembership::Admin : ($config['member'] ? \GroupMembership::Member : \GroupMembership::NonMember);
+    $readAuth = \helper_base::get_read_auth($conn['website_id'], $conn['password']);
     $groupPageLinks = \ElasticsearchReportHelper::getGroupPageLinksArray([
       'id' => $config['group_id'],
       'title' => $config['group_title'],
@@ -36,20 +37,24 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       'joining_method' => $config['joining_method'],
       'container' => $config['container'],
     ], [
-      'readAuth' => \helper_base::get_read_auth($conn['website_id'], $conn['password']),
+      'readAuth' => $readAuth,
       'joinLink' => TRUE,
       'editPath' => ltrim($config['edit_alias'], '/'),
       'containedGroupLabel' => $config['contained_group_label'],
     ], $membership);
-    if ($config['container']) {
-      $groupPageLinks["$config[edit_alias]?container_group_id=$config[group_id]"];
-    }
     $linksHtml = [];
+    // If showing the links for a parent container group, then include a home
+    // page link.
+    if ($config['container'] && $config['include_home_link']) {
+      $groupUrlPath = trim(preg_replace('/[^a-z0-9-]/', '', str_replace(' ', '-', strtolower($config['group_title']))), '-');
+      $containerHomeButtonCaption = $this->t('@title home', ['@title' => $config['group_title']]);
+      $linksHtml[] = "<li><a href=\"/groups/$groupUrlPath\" class=\"$indicia_templates[buttonHighlightedClass]\">$containerHomeButtonCaption</a></li>";
+    }
     foreach ($groupPageLinks as $href => $linkInfo) {
       $linksHtml[] = "<li><a href=\"$href\" class=\"$indicia_templates[buttonHighlightedClass]\">$linkInfo[icon]$linkInfo[label]</a></li>";
     }
-    // @todo Parent group reports.
-    $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get('Activity links') . ':</p><ul>' . implode("\n", $linksHtml) . '</ul>';
+    $groupTypeLabel = ucfirst(!$config['container'] && $config['contained_by_group_id'] ? $config['contained_group_label'] : $config['group_label']);
+    $content = empty($groupPageLinks) ? '' : '<p>' . \lang::get("$groupTypeLabel links") . ':</p><ul>' . implode("\n", $linksHtml) . '</ul>';
     return [
       '#markup' => Markup::create($content),
       '#attached' => [

@@ -13,6 +13,7 @@ class GroupLandingPagesController extends ControllerBase {
    */
   public function groupHome($title) {
     $config = \Drupal::config('group_landing_pages.settings');
+    $indiciaConfig = \Drupal::config('iform.settings');
     $groups = $this->getGroupFromTitle($title);
     if (count($groups) !== 1) {
       $this->messenger()->addWarning($this->t('The link you have followed does not refer to a unique group name.'));
@@ -28,19 +29,10 @@ class GroupLandingPagesController extends ControllerBase {
       'implicit' => $group['implicit_record_inclusion'],
       'readAuth' => $readAuth,
     ], FALSE);
-    $membership = \helper_base::get_population_data([
-      'table' => 'groups_user',
-      'extraParams' => $readAuth + [
-        'group_id' => $group['id'],
-        'user_id' => hostsite_get_user_field('indicia_user_id'),
-      ],
-      'nocache' => TRUE,
-    ]);
-    $isMember = count($membership) > 0 && $membership[0]['pending'] === 'f';
-    $isAdmin = $isMember && $membership[0]['administrator'] === 't';
+    $membershipInfo = $this->getMembershipInfo($group, $readAuth);
     // @todo Should add a field groups.discoverable, instead of using joining
     // method to control view access.
-    if ($group['joining_method_raw'] !== 'P' && $group['joining_method_raw'] !== 'R' && !$isMember) {
+    if ($group['joining_method_raw'] !== 'P' && $group['joining_method_raw'] !== 'R' && !$membershipInfo['isMember']) {
       $this->messenger()->addWarning($this->t('The link you have followed is to a group you do not have access to view.'));
       hostsite_goto_page('<front>');
       return [];
@@ -58,23 +50,29 @@ class GroupLandingPagesController extends ControllerBase {
       '#group_type' => $group['group_type_term'],
       '#joining_method' => $group['joining_method_raw'],
       '#implicit_record_inclusion' => $group['implicit_record_inclusion'],
-      '#container' => $group['container'],
+      '#admin' => $membershipInfo['isAdmin'],
+      '#member' => $membershipInfo['isMember'],
+      '#pending' => $membershipInfo['isPending'],
+      '#container' => $group['container'] === 't' ? TRUE : FALSE,
       '#contained_by_group_id' => $group['contained_by_group_id'],
       '#contained_by_group_title' => $group['contained_by_group_title'],
+      '#contained_by_group_description' => $group['contained_by_group_description'],
       '#contained_by_group_logo_path' => $group['contained_by_group_logo_path'],
-      '#admin' => $isAdmin,
-      '#member' => $isMember,
-      '#pending' => count($membership) > 0 && $membership[0]['pending'] === 't',
+      '#contained_by_group_implicit_record_inclusion' => $group['contained_by_group_implicit_record_inclusion'],
+      '#contained_by_group_admin' => $membershipInfo['isContainerGroupAdmin'],
+      '#contained_by_group_member' => $membershipInfo['isContainerGroupMember'],
       '#can_view_blog' => !empty($group['post_blog_permission']),
-      '#can_post_blog' => ($group['post_blog_permission'] === 'A' && $isAdmin) || ($group['post_blog_permission'] === 'M' && $isMember),
+      '#can_post_blog' => ($group['post_blog_permission'] === 'A' && $membershipInfo['isAdmin']) || ($group['post_blog_permission'] === 'M' && $membershipInfo['isMember']),
       '#edit_alias' => $config->get('group_edit_alias'),
       '#group_label' => $config->get('group_label'),
       '#container_group_label' => $config->get('container_group_label'),
       '#contained_group_label' => $config->get('contained_group_label'),
       '#species_details_alias' => $config->get('species_details_alias'),
       '#species_details_within_group_alias' => $config->get('species_details_within_group_alias'),
+      '#warehouse_url' => $indiciaConfig->get('base_url'),
     ];
     return array_merge($defaultVariables, [
+      '#title' => $group['title'],
       '#theme' => 'group_landing_page_tabs',
       '#overview_tab_content' => array_merge([
         '#theme' => 'group_landing_page_overview',
@@ -147,6 +145,56 @@ class GroupLandingPagesController extends ControllerBase {
       'caching' => TRUE,
       'cachePerUser' => FALSE,
     ]);
+  }
+
+  /**
+   * Capture a summary of membership and admin status for the group.
+   *
+   * Also capture information about membership of the parent container group if
+   * relevant.
+   *
+   * @param array $group
+   *   Group data loaded from the database.
+   * @param array $readAuth
+   *   Read authorisation tokens.
+   *
+   * @return bool[]
+   *   Array with key/value pairs describing membership and admin status for
+   *   the user.
+   */
+  private function getMembershipInfo(array $group, array $readAuth) {
+    $membership = \helper_base::get_population_data([
+      'table' => 'groups_user',
+      'extraParams' => $readAuth + [
+        'query' => json_encode([
+          'in' => [
+            'group_id' => [$group['id'], $group['contained_by_group_id']],
+          ],
+        ]),
+        'user_id' => hostsite_get_user_field('indicia_user_id'),
+      ],
+      'nocache' => TRUE,
+    ]);
+    $r = [
+      'isMember' => FALSE,
+      'isAdmin' => FALSE,
+      'isPending' => FALSE,
+      'isContainerGroupMember' => FALSE,
+      'isContainerGroupAdmin' => FALSE,
+    ];
+    foreach ($membership as $m) {
+      if ($m['pending'] === 't') {
+        // Capture pending membership if for the main page group.
+        $r['isPending'] = $r['isPending'] || ($m['group_id'] == $group['id']);
+      }
+      elseif ($m['administrator'] === 't') {
+        $r['isAdmin'] = $r['isAdmin'] || ($m['group_id'] == $group['id']);
+        $r['isContainerGroupAdmin'] = $r['isContainerGroupAdmin'] || ($m['group_id'] == $group['contained_by_group_id']);
+      }
+      $r['isMember'] = $r['isMember'] || ($m['group_id'] == $group['id']);
+      $r['isContainerGroupMember'] = $r['isContainerGroupMember ']|| ($m['group_id'] == $group['contained_by_group_id']);
+    }
+    return $r;
   }
 
 }
