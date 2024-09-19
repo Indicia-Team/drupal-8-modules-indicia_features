@@ -30,13 +30,6 @@ class GroupLandingPagesController extends ControllerBase {
       'readAuth' => $readAuth,
     ], FALSE);
     $membershipInfo = $this->getMembershipInfo($group, $readAuth);
-    // @todo Should add a field groups.discoverable, instead of using joining
-    // method to control view access.
-    if ($group['joining_method_raw'] !== 'P' && $group['joining_method_raw'] !== 'R' && !$membershipInfo['isMember']) {
-      $this->messenger()->addWarning($this->t('The link you have followed is to a group you do not have access to view.'));
-      hostsite_goto_page('<front>');
-      return [];
-    }
     // Make logo available to JS so it can add to header.
     \helper_base::$indiciaData['group'] = $group;
     \helper_base::$indiciaData['logoPath'] = $group['logo_path'];
@@ -163,6 +156,11 @@ class GroupLandingPagesController extends ControllerBase {
    *   the user.
    */
   private function getMembershipInfo(array $group, array $readAuth) {
+    $indiciaUserId = hostsite_get_user_field('indicia_user_id');
+    if (!$indiciaUserId) {
+      // Not linked to warehouse so can't be a member.
+      return [];
+    }
     $membership = \helper_base::get_population_data([
       'table' => 'groups_user',
       'extraParams' => $readAuth + [
@@ -171,7 +169,7 @@ class GroupLandingPagesController extends ControllerBase {
             'group_id' => [$group['id'], $group['contained_by_group_id']],
           ],
         ]),
-        'user_id' => hostsite_get_user_field('indicia_user_id'),
+        'user_id' => $indiciaUserId,
       ],
       'nocache' => TRUE,
     ]);
@@ -192,7 +190,7 @@ class GroupLandingPagesController extends ControllerBase {
         $r['isContainerGroupAdmin'] = $r['isContainerGroupAdmin'] || ($m['group_id'] == $group['contained_by_group_id']);
       }
       $r['isMember'] = $r['isMember'] || ($m['group_id'] == $group['id']);
-      $r['isContainerGroupMember'] = $r['isContainerGroupMember ']|| ($m['group_id'] == $group['contained_by_group_id']);
+      $r['isContainerGroupMember'] = $r['isContainerGroupMember'] || ($m['group_id'] == $group['contained_by_group_id']);
     }
     return $r;
   }
