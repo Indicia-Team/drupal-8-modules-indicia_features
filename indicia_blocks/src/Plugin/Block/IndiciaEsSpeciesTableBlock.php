@@ -149,16 +149,18 @@ class IndiciaEsSpeciesTableBlock extends IndiciaBlockBase {
       ];
     }
     $r .= \ElasticsearchReportHelper::dataGrid($gridOptions);
-    $r .= \ElasticsearchReportHelper::download([
-      'linkToDataControl' => 'speciesTable-' . self::$blockCount,
-      'caption' => 'Download species data',
-      'sort' => [
-        'taxon.kingdom' => 'asc',
-        'taxon.order' => 'asc',
-        'taxon.family' => 'asc',
-        'taxon.accepted_name' => 'asc',
-      ],
-    ]);
+    if (\Drupal::currentUser()->isAuthenticated()) {
+      $r .= \ElasticsearchReportHelper::download([
+        'linkToDataControl' => 'speciesTable-' . self::$blockCount,
+        'caption' => 'Download species data',
+        'sort' => [
+          'taxon.kingdom' => 'asc',
+          'taxon.order' => 'asc',
+          'taxon.family' => 'asc',
+          'taxon.accepted_name' => 'asc',
+        ],
+      ]);
+    }
     return [
       '#markup' => Markup::create($r),
       '#attached' => [
