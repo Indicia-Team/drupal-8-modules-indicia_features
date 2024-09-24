@@ -40,7 +40,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       'joinLink' => TRUE,
       'editPath' => ltrim($config['edit_alias'], '/'),
       'containedGroupLabel' => $config['contained_group_label'],
-    ], $membership);
+    ], $membership, FALSE);
     $linksHtml = [];
     // If showing the links for a parent container group, then include a home
     // page link.
@@ -62,16 +62,12 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
           'group_landing_pages/page-links-block',
         ],
       ],
+      '#cache' => [
+        'keys' => ['group', $config['group_id'], 'links'],
+        'contexts' => ['route'],
+        'tags' => ["iform:group:$config[group_id]"],
+      ],
     ];
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * Prevent caching.
-   */
-  public function getCacheMaxAge() {
-    return 0;
   }
 
 }
