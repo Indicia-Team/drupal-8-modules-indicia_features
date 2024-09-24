@@ -92,7 +92,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
       '#markup' => Markup::create($r),
       '#attached' => [
         'library' => [
-          'naturespot_blocks/es-blocks',
+          'indicia_blocks/es-blocks',
         ],
       ],
       '#cache' => [
