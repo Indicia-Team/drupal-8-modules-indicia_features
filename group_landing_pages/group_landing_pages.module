@@ -69,67 +69,153 @@ function group_landing_pages_theme($existing, $type, $theme, $path) {
  * Implements hook_theme_suggestions_HOOK().
  *
  * Provides suggestions for template names:
- * * group-landing-page-tabs--type-<type name>, e.g.
- *   group-landing-page-tabs--type-bioblitz.html.twig.
- * * group-landing-page-tabs--id-<id>, e.g.
+ * * group-landing-page-tabs--type-<type name> - applies to any page of a given
+ *   group type, e.g. group-landing-page-tabs--type-bioblitz.html.twig.
+ * * group-landing-pages-tabs--container - applies to any page that is a
+ *   container (parent) for other contained projects (children).
+ * * group-landing-pages-tabs--container--type-<type name> - applies to any
+ *   container (parent) page of a given  group type, e.g.
+ *   group-landing-page-tabs--container--type-national-scheme.html.twig.
+ * * group-landing-pages-tabs--contained - applies to any page that is
+ *   contained within a container group (i.e. a child of or sub-project).
+ * * group-landing-pages-tabs--contained--type-<type name> - applies to any
+ *   page that is contained within a container group (i.e. a child of or
+ *   sub-project) and of a given type, e.g.
+ *   group-landing-page-tabs--contained--type-bioblitz.html.twig.
+ * * group-landing-page-tabs--contained--parent-id-<id>.html.twig - applies to
+ *   any page that is contained within a container group (i.e. a child of or
+ *   sub-project) and where the parent container group has the given ID.
+ * * group-landing-page-tabs--id-<id> applies only to the page that is for the
+ *   group specified for the given ID, e.g.
  *   group-landing-page-tabs--id-123.html.twig.
+ *
+ * Type name replacements will always be in lowercase, with non-alpha
+ * characters replaced by a hyphen.
  */
 function group_landing_pages_theme_suggestions_group_landing_page_tabs(array $variables) {
-  $suggestions = [];
-  // Lowest priority (least specific) first.
-  $suggestions[] = 'group_landing_page_tabs__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
-  $suggestions[] = "group_landing_page_tabs__id_$variables[group_id]";
-  return $suggestions;
+  return group_landing_pages_get_template_suggestions('group_landing_page_tabs', $variables);
 }
 
 /**
  * Implements hook_theme_suggestions_HOOK().
  *
  * Provides suggestions for template names:
- * * group-landing-page-overview--type-<type name>, e.g.
- *   group-landing-page-overview--type-bioblitz.html.twig.
- * * group-landing-page-overview--id-<id>, e.g.
- *   group-landing-page-overview--id-123.html.twig.
+ * * group-landing-page-tabs--type-<type name> - applies to any page of a given
+ *   group type, e.g. group-landing-page-tabs--type-bioblitz.html.twig.
+ * * group-landing-pages-tabs--container - applies to any page that is a
+ *   container (parent) for other contained projects (children).
+ * * group-landing-pages-tabs--container--type-<type name> - applies to any
+ *   container (parent) page of a given  group type, e.g.
+ *   group-landing-page-tabs--container--type-national-scheme.html.twig.
+ * * group-landing-pages-tabs--contained - applies to any page that is
+ *   contained within a container group (i.e. a child of or sub-project).
+ * * group-landing-pages-tabs--contained--type-<type name> - applies to any
+ *   page that is contained within a container group (i.e. a child of or
+ *   sub-project) and of a given type, e.g.
+ *   group-landing-page-tabs--contained--type-bioblitz.html.twig.
+ * * group-landing-page-tabs--contained--parent-id-<id>.html.twig - applies to
+ *   any page that is contained within a container group (i.e. a child of or
+ *   sub-project) and where the parent container group has the given ID.
+ * * group-landing-page-tabs--id-<id> applies only to the page that is for the
+ *   group specified for the given ID, e.g.
+ *   group-landing-page-tabs--id-123.html.twig.
+ *
+ * Type name replacements will always be in lowercase, with non-alpha
+ * characters replaced by a hyphen.
  */
 function group_landing_pages_theme_suggestions_group_landing_page_overview(array $variables) {
-  $suggestions = [];
-  // Lowest priority (least specific) first.
-  $suggestions[] = 'group_landing_page_overview__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
-  $suggestions[] = "group_landing_page_overview__id_$variables[group_id]";
-  return $suggestions;
+  return group_landing_pages_get_template_suggestions('group_landing_page_overview', $variables);
 }
 
 /**
  * Implements hook_theme_suggestions_HOOK().
  *
  * Provides suggestions for template names:
- * * group-landing-page-progress--type-<type name>, e.g.
- *   group-landing-page-progress--type-bioblitz.html.twig.
- * * group-landing-page-progress--id-<id>, e.g.
- *   group-landing-page-progress--id-123.html.twig.
+ * * group-landing-page-tabs--type-<type name> - applies to any page of a given
+ *   group type, e.g. group-landing-page-tabs--type-bioblitz.html.twig.
+ * * group-landing-pages-tabs--container - applies to any page that is a
+ *   container (parent) for other contained projects (children).
+ * * group-landing-pages-tabs--container--type-<type name> - applies to any
+ *   container (parent) page of a given  group type, e.g.
+ *   group-landing-page-tabs--container--type-national-scheme.html.twig.
+ * * group-landing-pages-tabs--contained - applies to any page that is
+ *   contained within a container group (i.e. a child of or sub-project).
+ * * group-landing-pages-tabs--contained--type-<type name> - applies to any
+ *   page that is contained within a container group (i.e. a child of or
+ *   sub-project) and of a given type, e.g.
+ *   group-landing-page-tabs--contained--type-bioblitz.html.twig.
+ * * group-landing-page-tabs--contained--parent-id-<id>.html.twig - applies to
+ *   any page that is contained within a container group (i.e. a child of or
+ *   sub-project) and where the parent container group has the given ID.
+ * * group-landing-page-tabs--id-<id> applies only to the page that is for the
+ *   group specified for the given ID, e.g.
+ *   group-landing-page-tabs--id-123.html.twig.
+ *
+ * Type name replacements will always be in lowercase, with non-alpha
+ * characters replaced by a hyphen.
  */
 function group_landing_pages_theme_suggestions_group_landing_page_progress(array $variables) {
-  $suggestions = [];
-  // Lowest priority (least specific) first.
-  $suggestions[] = 'group_landing_page_progress__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
-  $suggestions[] = "group_landing_page_overview__id_$variables[group_id]";
-  return $suggestions;
+  return group_landing_pages_get_template_suggestions('group_landing_page_progress', $variables);
 }
 
 /**
  * Implements hook_theme_suggestions_HOOK().
  *
  * Provides suggestions for template names:
- * * group-landing-page-taxa--type-<type name>, e.g.
- *   group-landing-page-taxa--type-bioblitz.html.twig.
- * * group-landing-page-taxa--id-<id>, e.g.
- *   group-landing-page-taxa--id-123.html.twig.
+ * * group-landing-page-tabs--type-<type name> - applies to any page of a given
+ *   group type, e.g. group-landing-page-tabs--type-bioblitz.html.twig.
+ * * group-landing-pages-tabs--container - applies to any page that is a
+ *   container (parent) for other contained projects (children).
+ * * group-landing-pages-tabs--container--type-<type name> - applies to any
+ *   container (parent) page of a given  group type, e.g.
+ *   group-landing-page-tabs--container--type-national-scheme.html.twig.
+ * * group-landing-pages-tabs--contained - applies to any page that is
+ *   contained within a container group (i.e. a child of or sub-project).
+ * * group-landing-pages-tabs--contained--type-<type name> - applies to any
+ *   page that is contained within a container group (i.e. a child of or
+ *   sub-project) and of a given type, e.g.
+ *   group-landing-page-tabs--contained--type-bioblitz.html.twig.
+ * * group-landing-page-tabs--contained--parent-id-<id>.html.twig - applies to
+ *   any page that is contained within a container group (i.e. a child of or
+ *   sub-project) and where the parent container group has the given ID.
+ * * group-landing-page-tabs--id-<id> applies only to the page that is for the
+ *   group specified for the given ID, e.g.
+ *   group-landing-page-tabs--id-123.html.twig.
+ *
+ * Type name replacements will always be in lowercase, with non-alpha
+ * characters replaced by a hyphen.
  */
 function group_landing_pages_theme_suggestions_group_landing_page_taxa(array $variables) {
+  return group_landing_pages_get_template_suggestions('group_landing_page_taxa', $variables);
+}
+
+/**
+ * Builds a list of template suggestions for the landing page components.
+ *
+ * @param string $prefix
+ *   Prefix to use for the theme suggestions, e.g. group_landing_page_tabs.
+ * @param array $variables
+ *   Theme variables.
+ *
+ * @return string[]
+ *   Template suggestions with lowest precedence (most generic) first.
+ */
+function group_landing_pages_get_template_suggestions($prefix, array $variables) {
   $suggestions = [];
+  $groupType = preg_replace('/[^a-z]/', '_', strtolower($variables['group_type']));
+
   // Lowest priority (least specific) first.
-  $suggestions[] = 'group_landing_page_taxa__type_' . preg_replace('/[^a-z]/', '-', strtolower($variables['group_type']));
-  $suggestions[] = "group_landing_page_taxa__id_$variables[group_id]";
+  $suggestions[] = "{$prefix}__type_{$groupType}";
+  if ($variables['container']) {
+    $suggestions[] = "{$prefix}__container";
+    $suggestions[] = "{$prefix}__container__type_{$groupType}";
+  }
+  if ($variables['contained_by_group_id']) {
+    $suggestions[] = "{$prefix}__contained";
+    $suggestions[] = "{$prefix}__contained__type_{$groupType}";
+    $suggestions[] = "{$prefix}__contained__type_{$groupType}__parent_id_{$variables['contained_by_group_id']}";
+  }
+  $suggestions[] = "{$prefix}__id_$variables[group_id]";
   return $suggestions;
 }
 
