@@ -12,20 +12,46 @@ page.
 
 # Theming the group landing page output
 
-The Group Landing Pages module renders the landing page for a group using a theme hook called
-`group_landing_page`. An example template is provided in the module's templates folder which
-describes the variables available in the header comment. Copy the `group-landing-page.html.twig`
-file to your theme's templates folders and modify it if you need a customised default group landing
-page template.
+The Group Landing Pages module renders the landing page for a group using the following theme
+hooks:
+* `group_landing_page_tabs` - the tab container for the page.
+* `group_landing_page_overview` - the main overview tab.
+* `group_landing_page_progress` - the progress summary tab.
+* `group_landing_page_taxa` - the taxa/species information tab.
+
+Example templates are provided in the module's templates folder which describes the variables
+available in the header comment. Copy the required files to your theme's templates folders and
+modify them if you need a customised default group landing page template.
 
 Theme suggestions are provided to allow you to create versions of the template file specific to
-certain group types, or specific to individual groups:
-* `group-landing-page--type-<type>.html.twig` - replace `<type>` with the group type in lowercase
+certain group types, to container/contained groups, or specific to individual groups:
+
+* `<theme_hook>-type-<type>.html.twig` - replace `<type>` with the group type in lowercase
   and with non-alphabetic characters replaced by hyphens (e.g. bioblitz or local-project). This
   template will then be used for all groups of that type, unless individually overridden as
   described below.
-* `group-landing-page--id-<id>.html.twig` - replace `<id>` with the numeric group unique
+* `<theme_hook>--contained.html.twig` - used for groups that are contained within a parent
+  container group.
+* `<theme_hook>--container.html.twig` - used for groups that are containers for other contained
+  groups.
+* `<theme_hook>--contained--type-<type>.html.twig` - used for groups that are contained within a
+  parent container group and of the given type.
+* `<theme_hook>--container--type-<type>.html.twig` - used for groups that are containers for other
+  contained groups and of the given type.
+* `<theme_hook>--contained--type-<type>--parent-id-<id>.html.twig` - used for groups that are
+  contained within a parent container group with the given ID and where the contained group is of
+  the given type.
+* `<theme_hook>--id-<id>.html.twig` - replace `<id>` with the numeric group unique
   identifier. This template will then be used only by that specific group.
+
+Here are some example template suggestions for the overview tab, for group ID 5, which is contained
+within group ID 1 and where the type is set to "project":
+* group-landing-page-overview--id-5.html.twig
+* group-landing-page-overview--contained--type-project--parent-id-1.html.twig
+* group-landing-page-overview--contained--type-project.html.twig
+* group-landing-page-overview--contained.html.twig
+* group-landing-page-overview--type-project.html.twig
+* group-landing-page-overview.html.twig.
 
 # Blocks
 
