@@ -6,14 +6,14 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
- * Provides a 'Elasticsearch records by taxon group pie' block.
+ * Provides a 'Elasticsearch records by species pie' block.
  *
  * @Block(
- *   id = "es_records_by_taxon_group_pie_block",
- *   admin_label = @Translation("Elasticsearch records by taxon group pie"),
+ *   id = "es_records_by_species_pie_block",
+ *   admin_label = @Translation("Elasticsearch records by species pie"),
  * )
  */
-class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
+class IndiciaEsRecordsBySpeciesPieBlock extends IndiciaBlockBase {
 
   /**
    * {@inheritdoc}
@@ -47,13 +47,13 @@ class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
     }
     $config = $this->getConfiguration();
     $r = \ElasticsearchReportHelper::source([
-      'id' => 'recordsByTaxonGroupPieSource-' . self::$blockCount,
+      'id' => 'recordsBySpeciesPieSource-' . self::$blockCount,
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => [
-        'by_group' => [
+        'by_species' => [
           'terms' => [
-            'field' => 'taxon.group.keyword',
+            'field' => 'taxon.species.keyword',
             'size' => 8,
           ],
         ],
@@ -61,9 +61,9 @@ class IndiciaEsRecordsByTaxonGroupPie extends IndiciaBlockBase {
       'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
-      'id' => 'recordsByTaxonGroupPie-' . self::$blockCount,
-      'source' => 'recordsByTaxonGroupPieSource-' . self::$blockCount,
-      'functionName' => 'handleRecordsByTaxonGroupPieResponse',
+      'id' => 'recordsBySpeciesPie-' . self::$blockCount,
+      'source' => 'recordsBySpeciesPieSource-' . self::$blockCount,
+      'functionName' => 'handleRecordsBySpeciesPieResponse',
       'class' => 'indicia-block-visualisation',
     ]);
 

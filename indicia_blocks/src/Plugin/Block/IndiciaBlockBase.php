@@ -34,7 +34,7 @@ abstract class IndiciaBlockBase extends BlockBase {
       '#type' => 'textfield',
       '#title' => $this->t('View permission'),
       '#description' => $this->t('Set to the name of an existing permission that is required to view the block content, or leave blank to make the block content publicly accessible.'),
-      '#default_value' => isset($config['view_permission']) ? $config['view_permission'] : '',
+      '#default_value' => $config['view_permission'] ?? '',
     ];
 
     return $form;
