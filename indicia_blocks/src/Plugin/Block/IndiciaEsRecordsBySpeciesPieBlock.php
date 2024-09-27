@@ -58,7 +58,7 @@ class IndiciaEsRecordsBySpeciesPieBlock extends IndiciaBlockBase {
           ],
         ],
       ],
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
       'id' => 'recordsBySpeciesPie-' . self::$blockCount,

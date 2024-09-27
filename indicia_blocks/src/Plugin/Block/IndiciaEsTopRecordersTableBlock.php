@@ -129,7 +129,7 @@ class IndiciaEsTopRecordersTableBlock extends IndiciaBlockBase {
       'size' => 0,
       'proxyCacheTimeout' => $config['cache_timeout'] ?? 300,
       'aggregation' => $agg,
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
       'source' => 'topRecordersTableSource-' . self::$blockCount,

@@ -59,21 +59,16 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
     $config = array_merge([
       'limit' => 6,
     ], $this->getConfiguration());
+    $filterBoolClauses = $this->getFilterBoolClauses($config);
+    $filterBoolClauses['must'][] = [
+      'nested' => 'occurrence.media',
+      'query_type' => 'exists',
+      'field' => 'occurrence.media',
+    ];
     $r = \ElasticsearchReportHelper::source([
       'id' => 'es-photos-' . self::$blockCount,
       'proxyCacheTimeout' => 1800,
-      'filterBoolClauses' => [
-        'must' => array_merge(
-          $this->getFilterBoolClauses($config),
-          [
-            [
-              'nested' => 'occurrence.media',
-              'query_type' => 'exists',
-              'field' => 'occurrence.media',
-            ],
-          ]
-        ),
-      ],
+      'filterBoolClauses' => $filterBoolClauses,
       'size' => $config['limit'] ?? 6,
       'sort' => ['metadata.created_on' => 'desc'],
     ]);

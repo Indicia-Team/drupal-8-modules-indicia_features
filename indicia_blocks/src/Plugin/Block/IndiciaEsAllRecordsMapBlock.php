@@ -77,13 +77,6 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
         '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
       ];
     }
-    $enabled = \ElasticsearchReportHelper::enableElasticsearchProxy();
-    if (!$enabled) {
-      global $indicia_templates;
-      return [
-        '#markup' => str_replace('{message}', $this->t('Service unavailable.'), $indicia_templates['warningBox']),
-      ];
-    }
     // Get config with defaults.
     $config = array_merge([
       'map_layer_type' => 'circle',
@@ -106,7 +99,7 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
       'id' => 'allRecordsMapBlockSource-' . self::$blockCount,
       'mode' => $mode,
       'switchToGeomsAt' => 13,
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
     ]);
     $r .= \ElasticsearchReportHelper::leafletMap([
       'id' => 'allRecordsMap-' . self::$blockCount,
@@ -129,12 +122,6 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
         ],
       ],
     ]);
-
-    // @todo Apply location ID or search area boundary if group limited.
-
-    // @todo zoomable or fixed.
-
-
     return [
       '#markup' => Markup::create($r),
       '#attached' => [

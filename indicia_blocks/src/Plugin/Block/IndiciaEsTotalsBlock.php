@@ -76,7 +76,7 @@ class IndiciaEsTotalsBlock extends IndiciaBlockBase {
           ],
         ],
       ],
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
     ];
     if (!empty($config['limit_to_user'])) {
       $recordersDiv = '';

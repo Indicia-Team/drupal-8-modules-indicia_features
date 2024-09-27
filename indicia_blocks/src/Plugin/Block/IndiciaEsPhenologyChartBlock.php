@@ -6,11 +6,11 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
- * Provides an 'Elasticsearch phenology graph' block.
+ * Provides an 'Elasticsearch phenology chart' block.
  *
  * @Block(
  *   id = "es_phenology_chart_block",
- *   admin_label = @Translation("Elasticsearch phenology graph block"),
+ *   admin_label = @Translation("Elasticsearch phenology chart block"),
  * )
  */
 class IndiciaEsPhenologyChartBlock extends IndiciaBlockBase {
@@ -58,7 +58,7 @@ class IndiciaEsPhenologyChartBlock extends IndiciaBlockBase {
           ],
         ],
       ],
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
       'id' => 'phenologyChart-' . self::$blockCount,

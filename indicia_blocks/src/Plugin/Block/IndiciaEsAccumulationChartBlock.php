@@ -6,11 +6,11 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
- * Provides an 'Elasticsearch accumulation graph' block.
+ * Provides an 'Elasticsearch accumulation chart' block.
  *
  * @Block(
- *   id = "es_accumulation_graph_block",
- *   admin_label = @Translation("Elasticsearch accumulation graph block"),
+ *   id = "es_accumulation_chart_block",
+ *   admin_label = @Translation("Elasticsearch accumulation chart block"),
  * )
  */
 class IndiciaEsAccumulationChartBlock extends IndiciaBlockBase {
@@ -74,6 +74,7 @@ class IndiciaEsAccumulationChartBlock extends IndiciaBlockBase {
             'by_taxon' => [
               'terms' => [
                 'field' => 'taxon.accepted_taxon_id',
+                'size' => 50000,
               ],
               'aggs' => [
                 'by_year' => [
@@ -86,7 +87,7 @@ class IndiciaEsAccumulationChartBlock extends IndiciaBlockBase {
           ],
         ],
       ],
-      'filterBoolClauses' => ['must' => $this->getFilterBoolClauses($config)],
+      'filterBoolClauses' => $this->getFilterBoolClauses($config),
       'numericFilters' => ['event.year' => (date("Y") - 1) . '-' . date("Y")],
     ]);
     $r .= \ElasticsearchReportHelper::customScript([
