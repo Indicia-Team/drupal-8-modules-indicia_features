@@ -73,7 +73,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
       'sort' => ['metadata.created_on' => 'desc'],
     ]);
     $r .= \ElasticsearchReportHelper::cardGallery([
-      'id' => 'photo-cards-' . self::$blockCount,
+      'id' => 'recentPhotos-' . self::$blockCount,
       'class' => 'horizontal',
       'source' => 'es-photos-' . self::$blockCount,
       'columns' => [
@@ -90,10 +90,8 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
           'indicia_blocks/es-blocks',
         ],
       ],
-      '#cache' => [
-        // No cache please.
-        'max-age' => 0,
-      ],
+      // Rely on Indicia caching, otherwise our JS not injected onto page.
+      '#cache' => ['max-age' => 0],
     ];
   }
 

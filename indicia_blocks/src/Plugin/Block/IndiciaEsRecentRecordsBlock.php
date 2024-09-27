@@ -94,6 +94,7 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
     ];
     $r = \ElasticsearchReportHelper::source($options);
     $r .= \ElasticsearchReportHelper::customScript([
+      'id' => 'recentRecords-' . self::$blockCount,
       'source' => $sourceId,
       'functionName' => 'handleEsRecentRecordsResponse',
     ]);
@@ -105,20 +106,9 @@ class IndiciaEsRecentRecordsBlock extends IndiciaBlockBase {
           'iform/fancybox',
         ],
       ],
-      '#cache' => [
-        // No cache please.
-        'max-age' => 0,
-      ],
+      // Rely on Indicia caching, otherwise our JS not injected onto page.
+      '#cache' => ['max-age' => 0],
     ];
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * Prevent caching.
-   */
-  public function getCacheMaxAge() {
-    return 0;
   }
 
 }

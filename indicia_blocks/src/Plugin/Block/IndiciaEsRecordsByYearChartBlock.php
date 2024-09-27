@@ -74,10 +74,8 @@ class IndiciaEsRecordsByYearChartBlock extends IndiciaBlockBase {
           'iform/brc_charts',
         ],
       ],
-      '#cache' => [
-        // No cache please.
-        'max-age' => 0,
-      ],
+      // Rely on Indicia caching, otherwise our JS not injected onto page.
+      '#cache' => ['max-age' => 0],
     ];
   }
 
