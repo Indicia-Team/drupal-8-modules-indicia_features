@@ -4,7 +4,6 @@
       var logoEl = $(indiciaData.logoSelector).first();
       // Find the main page logo and insert this after.
       $('<img src="' + indiciaData.warehouseUrl + 'upload/' + indiciaData.logoPath + '" id="group-logo">')
-        .css('height', logoEl[0].clientHeight + 'px')
         .appendTo(logoEl);
     }
   });

@@ -59,26 +59,21 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
     $config = array_merge([
       'limit' => 6,
     ], $this->getConfiguration());
+    $filterBoolClauses = $this->getFilterBoolClauses($config);
+    $filterBoolClauses['must'][] = [
+      'nested' => 'occurrence.media',
+      'query_type' => 'exists',
+      'field' => 'occurrence.media',
+    ];
     $r = \ElasticsearchReportHelper::source([
       'id' => 'es-photos-' . self::$blockCount,
       'proxyCacheTimeout' => 1800,
-      'filterBoolClauses' => [
-        'must' => array_merge(
-          $this->getFilterBoolClauses($config),
-          [
-            [
-              'nested' => 'occurrence.media',
-              'query_type' => 'exists',
-              'field' => 'occurrence.media',
-            ],
-          ]
-        ),
-      ],
+      'filterBoolClauses' => $filterBoolClauses,
       'size' => $config['limit'] ?? 6,
       'sort' => ['metadata.created_on' => 'desc'],
     ]);
     $r .= \ElasticsearchReportHelper::cardGallery([
-      'id' => 'photo-cards-' . self::$blockCount,
+      'id' => 'recentPhotos-' . self::$blockCount,
       'class' => 'horizontal',
       'source' => 'es-photos-' . self::$blockCount,
       'columns' => [
@@ -95,10 +90,8 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
           'indicia_blocks/es-blocks',
         ],
       ],
-      '#cache' => [
-        // No cache please.
-        'max-age' => 0,
-      ],
+      // Rely on Indicia caching, otherwise our JS not injected onto page.
+      '#cache' => ['max-age' => 0],
     ];
   }
 

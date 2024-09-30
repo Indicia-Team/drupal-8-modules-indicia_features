@@ -137,7 +137,6 @@ jQuery(document).ready(function($) {
         data.push(rowData);
       });
     });
-
     brccharts.accum({
       selector: '#' + div.id,
       data: data,
@@ -146,6 +145,10 @@ jQuery(document).ready(function($) {
       axisCountLabel: 'Number of records',
       axisTaxaLabel: 'Number of taxa',
       interactivity: 'mouseclick',
+      margin: {left: 45, right: 68, bottom: 30, top: 10},
+      titleFontSize: 18,
+      axisLabelFontSize: 12,
+      legendFontSize: 12,
       metrics: [{
         prop: lastYear,
         labelTaxa: lastYear + ' taxa',
