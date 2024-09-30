@@ -45,41 +45,41 @@
 
 <div class="row">
   <div class="col-md-6">
-    <h3>All records per year</h3>
-    {{ drupal_block('es_records_by_year_chart_block', {unverified_records: true}) }}
+    <h3>{{ "All records per year"|trans }}</h3>
+    {{ drupal_block('es_records_by_year_chart_block', {unverified_records: true, sensitive_records: true}) }}
   </div>
   <div class="col-md-6">
-    <h3>All records per month</h3>
-    {{ drupal_block('es_phenology_chart_block', {unverified_records: true}) }}
-  </div>
-</div>
-<div class="row">
-  <div class="col-md-6">
-    <h3>Accumulation of species</h3>
-    {{ drupal_block('es_accumulation_graph_block', {unverified_records: true, show: 'taxa'}) }}
-  </div>
-  <div class="col-md-6">
-    <h3>Accumulation of records</h3>
-    {{ drupal_block('es_accumulation_graph_block', {unverified_records: true, show: 'counts'}) }}
+    <h3>{{ "All records per month"|trans }}</h3>
+    {{ drupal_block('es_phenology_chart_block', {unverified_records: true, sensitive_records: true}) }}
   </div>
 </div>
 <div class="row">
   <div class="col-md-6">
-    <h3>Most frequently recorded taxa</h3>
-    {{ drupal_block('es_records_by_species_pie_block', {unverified_records: true}) }}
+    <h3>{{ "Seasonal accumulation of species"|trans }}</h3>
+    {{ drupal_block('es_accumulation_chart_block', {unverified_records: true, sensitive_records: true, show: 'taxa'}) }}
   </div>
   <div class="col-md-6">
-    <h3>Top contributors</h3>
-    {{ drupal_block('es_top_recorders_table_block', {unverified_records: true}) }}
+    <h3>{{ "Seasonal accumulation of records"|trans }}</h3>
+    {{ drupal_block('es_accumulation_chart_block', {unverified_records: true, sensitive_records: true, show: 'counts'}) }}
   </div>
 </div>
 <div class="row">
   <div class="col-md-6">
-    <h3>Taxon groups</h3>
-    {{ drupal_block('es_records_by_taxon_group_pie_block', {unverified_records: true}) }}
+    <h3>{{ "Most frequently recorded taxa"|trans }}</h3>
+    {{ drupal_block('es_records_by_species_pie_block', {unverified_records: true, sensitive_records: true}) }}
   </div>
   <div class="col-md-6">
-    <h3>Verification status</h3>
-    {{ drupal_block('es_records_by_verification_status_pie_block', {unverified_records: true}) }}
+    <h3>{{ "Top contributors"|trans }}</h3>
+    {{ drupal_block('es_top_recorders_table_block', {unverified_records: true, sensitive_records: true}) }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <h3>{{ "Taxon groups"|trans }}</h3>
+    {{ drupal_block('es_records_by_taxon_group_pie_block', {unverified_records: true, sensitive_records: true}) }}
+  </div>
+  <div class="col-md-6">
+    <h3>{{ "Verification status"|trans }}</h3>
+    {{ drupal_block('es_records_by_verification_status_pie_block', {unverified_records: true, sensitive_records: true}) }}
   </div>
 </div>

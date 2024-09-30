@@ -83,15 +83,6 @@ class GroupLandingPagesController extends ControllerBase {
           'group_landing_pages/blog_entries_view',
         ],
       ],
-      '#cache' => [
-        'keys' => ['group', $group['id'], 'landingpage'],
-        'contexts' => [
-          'route',
-        ],
-        'tags' => [
-          "iform:group:$group[id]",
-        ],
-      ],
     ]);
   }
 
@@ -144,8 +135,7 @@ class GroupLandingPagesController extends ControllerBase {
       'dataSource' => 'library/groups/find_group_by_url',
       'readAuth' => $auth['read'],
       'extraParams' => $params,
-      'caching' => TRUE,
-      'cachePerUser' => FALSE,
+      'caching' => FALSE,
     ]);
   }
 
