@@ -10,7 +10,7 @@
 	],
     "extra": {
         "installer-paths": {
-            "web/modules/custom/iform/{$name}": ["type:drupal-custom-module"]
+            "web/modules/custom/indicia_features/{$name}": ["type:drupal-custom-module"]
         }
     }
 }
