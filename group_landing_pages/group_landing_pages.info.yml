@@ -1,6 +1,6 @@
 name: 'Group landing pages'
 description: 'Provides landing pages for every group (e.g. projects or activities).'
-core_version_requirement: ^10
+core_version_requirement: ^10 || ^11
 version: "9.4.0"
 package: "Indicia"
 type: module
