@@ -110,7 +110,7 @@ class IndiciaSpeciesCatalogue extends IndiciaBlockBase {
       $root = $this->buildTaxonTree($root);
       $children = isset($root['children']) && is_array($root['children']) ? $root['children'] : [];
       $html = $this->renderTaxonTreeHtml($children);
-
+     
       return [
         '#markup' => Markup::create($html),
         '#cache' => ['max-age' => 0],
@@ -474,33 +474,46 @@ class IndiciaSpeciesCatalogue extends IndiciaBlockBase {
     if (empty($nodes)) {
       return '';
     }
-    $html = '<ul>';
-    foreach ($nodes as $node) {
-      $name = Html::escape((string) ($node['name'] ?? ''));
-      $rank = strtolower((string) ($node['rank'] ?? ''));
-      $children = (!empty($node['children']) && is_array($node['children'])) ? $node['children'] : [];
 
-      $li_class = $rank ? ' class="rank-' . Html::escape($rank) . '"' : '';
-      $html .= '<li' . $li_class . '>';
+$html = "\n<ul>\n";
 
-      if ($rank === 'species') {
+foreach ($nodes as $node) {
+    $name = Html::escape((string) ($node['name'] ?? ''));
+    $rank = strtolower((string) ($node['rank'] ?? ''));
+    $children = (!empty($node['children']) && is_array($node['children']))
+        ? $node['children']
+        : [];
+
+    $li_class = $rank ? ' class="rank-' . Html::escape($rank) . '"' : '';
+    $html .= "\n    <li" . $li_class . ">";
+
+    if ($rank === 'species') {
         $raw_name = (string) ($node['name'] ?? '');
         $name_escaped = Html::escape($raw_name);
         $slug = urlencode($raw_name);
         $url = '/species?species_name=' . $slug;
-        $html .= '<a title="' . $name_escaped . '" href="' . Html::escape($url) . '">' . $name_escaped . '</a>';
-      }
-      else {
-        $html .= $name;
-      }
 
-      if (!empty($children)) {
-        $html .= $this->renderTaxonTreeHtml($children);
-      }
-      $html .= '</li>';
+        $html .= '<a title="' . $name_escaped . '" href="' . Html::escape($url) . '">'
+              . $name_escaped
+              . '</a>';
     }
-    $html .= '</ul>';
+    else {
+        $html .= $name;
+    }
+
+    if (!empty($children)) {
+        $html .= $this->renderTaxonTreeHtml($children);
+    }
+
+    $html .= "</li>\n";
+}
+
+$html .= "</ul>";
+
+
     return $html;
+
+
   }
 
 }
