@@ -26,6 +26,7 @@ class IndiciaEsAllRecordsMapBlock extends IndiciaBlockBase {
     $baseMapOptions = [
       'OpenStreetMap' => $this->t('Open Street Map'),
       'OpenTopoMap' => $this->t('Open Topo Map'),
+      'EsriWorldImagery' => $this->t('Esri World Imagery'),
     ];
     if (\Drupal::config('iform.settings')->get('google_api_key')) {
       $baseMapOptions['GoogleSatellite'] = $this->t('Google Satellite');
