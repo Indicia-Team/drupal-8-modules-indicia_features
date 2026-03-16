@@ -23,9 +23,25 @@ abstract class IndiciaEsMapBlockBase extends IndiciaBlockBase {
     $form['base_layer'] = [
       '#type' => 'select',
       '#title' => $this->t('Base layer'),
-      '#description' => $this->t('Select the base layer to use.'),
+      '#description' => $this->t('Select the base layer to use. Please ensure you comply with the terms of use for the base layer you select.'),
       '#options' => $this->getBaseMapOptions(),
       '#default_value' => $config['base_layer'] ?? 'OpenStreetMap',
+    ];
+    $form['base_layer_esri_notice'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['messages', 'messages--warning'],
+      ],
+      '#states' => [
+        'visible' => [
+          ':input[name="settings[base_layer]"]' => ['value' => 'EsriWorldImagery'],
+        ],
+      ],
+    ];
+    $form['base_layer_esri_notice']['message'] = [
+      '#markup' => $this->t('Please ensure that you comply with the <a href=":url" target="_blank" rel="noopener noreferrer">Esri World Imagery terms of use</a>.', [
+        ':url' => 'https://content.esri.com/arcgisonline/docs/tou_summary.pdf',
+      ]),
     ];
   }
 
