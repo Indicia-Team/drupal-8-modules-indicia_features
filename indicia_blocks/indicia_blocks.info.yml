@@ -5,4 +5,4 @@ version: "9.19.0"
 package: "Indicia"
 type: module
 dependencies:
-  - iform
+  - iform:iform

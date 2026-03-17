@@ -5,5 +5,5 @@ version: "9.19.0"
 package: "Indicia"
 type: module
 dependencies:
-  - iform
-  - webform
+  - iform:iform
+  - webform:webform
