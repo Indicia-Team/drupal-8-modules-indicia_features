@@ -21,6 +21,20 @@ abstract class IndiciaBlockBase extends BlockBase {
   protected static $blockCount = 0;
 
   /**
+   * Tracks whether a warehouse downtime warning was already shown.
+   *
+   * @var bool
+   */
+  protected static $warehouseDowntimeWarningShown = FALSE;
+
+  /**
+   * Tracks whether a Elasticsearch downtime warning was already shown.
+   *
+   * @var bool
+   */
+  protected static $elasticsearchDowntimeWarningShown = FALSE;
+
+  /**
    * {@inheritdoc}
    */
   public function blockForm($form, FormStateInterface $form_state) {
@@ -228,6 +242,106 @@ abstract class IndiciaBlockBase extends BlockBase {
       'filter' => $filter,
       'must_not' => $mustNot,
     ];
+  }
+
+  /**
+   * Executes a warehouse call with fallback handling for HTTP 503.
+   *
+   * @param callable $callback
+   *   Callback that performs the warehouse request.
+   * @param mixed $fallback
+   *   Fallback value returned when a 503 is detected.
+   *
+   * @return mixed
+   *   Callback result or fallback value.
+   *
+   * @throws \Throwable
+   *   Re-throws non-503 exceptions.
+   */
+  protected function runWarehouseCall(callable $callback, $fallback = NULL) {
+    try {
+      return $callback();
+    }
+    catch (\Throwable $e) {
+      if (!$this->isWarehouse503Exception($e)) {
+        throw $e;
+      }
+      if (!self::$warehouseDowntimeWarningShown) {
+        self::$warehouseDowntimeWarningShown = TRUE;
+        $this->messenger()->addWarning($this->t('The recording warehouse is temporarily unavailable. Please try again shortly.'));
+      }
+      \Drupal::logger('indicia_blocks')->warning('Warehouse unavailable (503): @message', ['@message' => $e->getMessage()]);
+      return $fallback;
+    }
+  }
+
+  /**
+   * Wrapper for safe report helper read auth requests.
+   *
+   * @param array $connection
+   *   Connection details containing website_id and password.
+   *
+   * @return array|null
+   *   Read auth array, or NULL when warehouse unavailable.
+   */
+  protected function getReadAuthSafely(array $connection) {
+    return $this->runWarehouseCall(function () use ($connection) {
+      return \report_helper::get_read_auth($connection['website_id'], $connection['password']);
+    });
+  }
+
+  /**
+   * Wrapper for safe report data requests.
+   *
+   * @param array $params
+   *   Parameters passed to report_helper::get_report_data.
+   * @param mixed $fallback
+   *   Value returned when warehouse unavailable.
+   *
+   * @return mixed
+   *   Report data or fallback value.
+   */
+  protected function getReportDataSafely(array $params, $fallback = []) {
+    return $this->runWarehouseCall(function () use ($params) {
+      return \report_helper::get_report_data($params);
+    }, $fallback);
+  }
+
+  /**
+   * Determines if an exception represents warehouse HTTP 503.
+   *
+   * @param \Throwable $e
+   *   Exception to test.
+   *
+   * @return bool
+   *   True when this is a 503 response, otherwise false.
+   */
+  protected function isWarehouse503Exception(\Throwable $e) {
+    $current = $e;
+    while ($current) {
+      if ((int) $current->getCode() === 503) {
+        return TRUE;
+      }
+      $message = (string) $current->getMessage();
+      if (strpos($message, '503') !== FALSE) {
+        return TRUE;
+      }
+      if (preg_match('/"status"\s*:\s*503/', $message)) {
+        return TRUE;
+      }
+      $current = $current->getPrevious();
+    }
+    return FALSE;
+  }
+
+  /**
+   * Shows a warning message about Elasticsearch being unavailable.
+   */
+  protected function showElasticsearchUnavailableMessage() {
+    if (!self::$elasticsearchDowntimeWarningShown) {
+      self::$elasticsearchDowntimeWarningShown = TRUE;
+      $this->messenger()->addWarning($this->t('The Elasticsearch reporting service is temporarily unavailable. Please try again shortly.'));
+    }
   }
 
 }
