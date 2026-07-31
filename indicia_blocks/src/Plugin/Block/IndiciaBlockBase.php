@@ -7,6 +7,7 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\user\UserInterface;
+use IForm\WarehouseRequestException;
 
 /**
  * Base class for providing Indicia blocks with permissions.
@@ -262,15 +263,15 @@ abstract class IndiciaBlockBase extends BlockBase {
     try {
       return $callback();
     }
-    catch (\Throwable $e) {
-      if (!$this->isWarehouse503Exception($e)) {
+    catch (WarehouseRequestException $e) {
+      if (!$e->isUnavailable()) {
         throw $e;
       }
       if (!self::$warehouseDowntimeWarningShown) {
         self::$warehouseDowntimeWarningShown = TRUE;
         $this->messenger()->addWarning($this->t('The recording warehouse is temporarily unavailable. Please try again shortly.'));
       }
-      \Drupal::logger('indicia_blocks')->warning('Warehouse unavailable (503): @message', ['@message' => $e->getMessage()]);
+      \Drupal::logger('indicia_blocks')->warning('Warehouse unavailable: @message', ['@message' => $e->getMessage()]);
       return $fallback;
     }
   }
@@ -305,33 +306,6 @@ abstract class IndiciaBlockBase extends BlockBase {
     return $this->runWarehouseCall(function () use ($params) {
       return \report_helper::get_report_data($params);
     }, $fallback);
-  }
-
-  /**
-   * Determines if an exception represents warehouse HTTP 503.
-   *
-   * @param \Throwable $e
-   *   Exception to test.
-   *
-   * @return bool
-   *   True when this is a 503 response, otherwise false.
-   */
-  protected function isWarehouse503Exception(\Throwable $e) {
-    $current = $e;
-    while ($current) {
-      if ((int) $current->getCode() === 503) {
-        return TRUE;
-      }
-      $message = (string) $current->getMessage();
-      if (strpos($message, '503') !== FALSE) {
-        return TRUE;
-      }
-      if (preg_match('/"status"\s*:\s*503/', $message)) {
-        return TRUE;
-      }
-      $current = $current->getPrevious();
-    }
-    return FALSE;
   }
 
   /**
