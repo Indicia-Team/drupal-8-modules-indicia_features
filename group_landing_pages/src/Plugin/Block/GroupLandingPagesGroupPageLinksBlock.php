@@ -22,7 +22,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     iform_load_helpers(['helper_base', 'ElasticsearchReportHelper']);
     $config = $this->getConfiguration();
     if (empty($config['group_id'])) {
-      \Drupal::messenger()->addWarning(t('The Group Landing Pages Group Page Links block should only be used by the Group Landing Pages module.'));
+      \Drupal::messenger()->addWarning($this->t('The Group Landing Pages Group Page Links block should only be used by the Group Landing Pages module.'));
       return [];
     }
     $conn = iform_get_connection_details();

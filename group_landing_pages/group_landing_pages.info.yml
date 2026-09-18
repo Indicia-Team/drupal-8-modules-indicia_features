@@ -5,6 +5,6 @@ version: "9.16.0"
 package: "Indicia"
 type: module
 dependencies:
-  - iform
-  - indicia_blocks
-  - twig_tweak
+  - iform:iform
+  - indicia_blocks:indicia_blocks
+  - drupal:twig_tweak
