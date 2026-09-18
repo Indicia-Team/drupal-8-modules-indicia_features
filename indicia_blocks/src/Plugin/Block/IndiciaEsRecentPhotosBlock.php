@@ -80,6 +80,7 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
         ],
       ],
       'includeFullScreenTool' => FALSE,
+      'includeExpandTool' => FALSE,
     ]);
     return [
       '#markup' => Markup::create($r),
