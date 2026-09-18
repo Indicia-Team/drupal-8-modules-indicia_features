@@ -28,6 +28,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
     $conn = iform_get_connection_details();
     global $indicia_templates;
     $membership = $config['admin'] ? \GroupMembership::Admin : ($config['member'] ? \GroupMembership::Member : \GroupMembership::NonMember);
+    $membershipCacheKey = $membership->name;
     $readAuth = \helper_base::get_read_auth($conn['website_id'], $conn['password']);
     $groupPageLinks = \ElasticsearchReportHelper::getGroupPageLinksArray([
       'id' => $config['group_id'],
@@ -63,7 +64,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
         ],
       ],
       '#cache' => [
-        'keys' => ['group', $config['group_id'], 'links'],
+        'keys' => ['group', $config['group_id'], 'links', $membershipCacheKey],
         'contexts' => ['route'],
         'tags' => ["iform:group:$config[group_id]"],
       ],
