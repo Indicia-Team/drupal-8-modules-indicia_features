@@ -30,6 +30,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       return [];
     }
     $conn = iform_get_connection_details();
+    $moduleConfig = \Drupal::config('group_landing_pages.settings');
     global $indicia_templates;
     $buttonClass = $indicia_templates['buttonHighlightedClass'];
     $membership = $config['admin'] ? \GroupMembership::Admin : ($config['member'] ? \GroupMembership::Member : \GroupMembership::NonMember);
@@ -46,6 +47,7 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       'joinLink' => TRUE,
       'editPath' => ltrim($config['edit_alias'], '/'),
       'containedGroupLabel' => $config['contained_group_label'],
+      'excludedGroupPagePaths' => $moduleConfig->get('group_page_paths_excluded_from_links') ?? [],
     ], $membership, FALSE);
     $links = [];
     // If showing the links for a parent container group, then include a home
@@ -86,25 +88,25 @@ class GroupLandingPagesGroupPageLinksBlock extends IndiciaBlockBase {
       '#cache' => [
         'keys' => ['group', $config['group_id'], 'links', $membershipCacheKey],
         'contexts' => ['route'],
-        'tags' => ["iform:group:$config[group_id]"],
+        'tags' => ["iform:group:$config[group_id]", 'config:group_landing_pages.settings'],
       ],
     ];
   }
 
   /**
    * Builds a safely escaped group page link.
-    *
-    * @param string $href
-    *   The link URL or path.
-    * @param string $label
-    *   The link label.
-    * @param string $icon
-    *   Optional icon markup to display before the label.
-    * @param string $buttonClass
-    *   CSS class to apply to the link.
-    *
-    * @return array
-    *   A Drupal link render array.
+   *
+   * @param string $href
+   *   The link URL or path.
+   * @param string $label
+   *   The link label.
+   * @param string $icon
+   *   Optional icon markup to display before the label.
+   * @param string $buttonClass
+   *   CSS class to apply to the link.
+   *
+   * @return array
+   *   A Drupal link render array.
    */
   private function buildLink($href, $label, $icon, $buttonClass) {
     $url = UrlHelper::isExternal($href) ? Url::fromUri($href) : Url::fromUserInput($href);
