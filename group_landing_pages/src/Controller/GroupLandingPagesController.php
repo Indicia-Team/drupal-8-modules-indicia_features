@@ -99,6 +99,11 @@ class GroupLandingPagesController extends ControllerBase {
    */
   public function groupBlog($title) {
     $groups = $this->getGroupFromTitle($title);
+    if (count($groups) !== 1) {
+      $this->messenger()->addWarning($this->t('The link you have followed does not refer to a unique group name.'));
+      hostsite_goto_page('<front>');
+      return [];
+    }
     return [
       'view' => [
         '#type' => 'view',
