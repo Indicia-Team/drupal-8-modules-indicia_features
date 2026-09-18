@@ -81,6 +81,9 @@ class IndiciaEsRecentPhotosBlock extends IndiciaBlockBase {
       ],
       'includeFullScreenTool' => FALSE,
       'includeExpandTool' => FALSE,
+      'allowCardSelection' => FALSE,
+      'openImageOnClick' => TRUE,
+      'popupImageGrouping' => 'all',
     ]);
     return [
       '#markup' => Markup::create($r),
