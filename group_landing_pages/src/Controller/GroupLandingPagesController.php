@@ -155,10 +155,17 @@ class GroupLandingPagesController extends ControllerBase {
    *   the user.
    */
   private function getMembershipInfo(array $group, array $readAuth) {
+    $r = [
+      'isMember' => FALSE,
+      'isAdmin' => FALSE,
+      'isPending' => FALSE,
+      'isContainerGroupMember' => FALSE,
+      'isContainerGroupAdmin' => FALSE,
+    ];
     $indiciaUserId = hostsite_get_user_field('indicia_user_id');
     if (!$indiciaUserId) {
       // Not linked to warehouse so can't be a member.
-      return [];
+      return $r;
     }
     $membership = \helper_base::get_population_data([
       'table' => 'groups_user',
@@ -172,13 +179,6 @@ class GroupLandingPagesController extends ControllerBase {
       ],
       'nocache' => TRUE,
     ]);
-    $r = [
-      'isMember' => FALSE,
-      'isAdmin' => FALSE,
-      'isPending' => FALSE,
-      'isContainerGroupMember' => FALSE,
-      'isContainerGroupAdmin' => FALSE,
-    ];
     foreach ($membership as $m) {
       if ($m['pending'] === 't') {
         // Capture pending membership if for the main page group.
