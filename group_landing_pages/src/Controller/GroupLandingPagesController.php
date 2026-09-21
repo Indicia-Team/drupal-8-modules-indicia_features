@@ -188,8 +188,9 @@ class GroupLandingPagesController extends ControllerBase {
       if ($m['pending'] === 't') {
         // Capture pending membership if for the main page group.
         $r['isPending'] = $r['isPending'] || ($m['group_id'] == $group['id']);
+        continue;
       }
-      elseif ($m['administrator'] === 't') {
+      if ($m['administrator'] === 't') {
         $r['isAdmin'] = $r['isAdmin'] || ($m['group_id'] == $group['id']);
         $r['isContainerGroupAdmin'] = $r['isContainerGroupAdmin'] || ($m['group_id'] == $group['contained_by_group_id']);
       }
