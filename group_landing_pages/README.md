@@ -23,6 +23,12 @@ Example templates are provided in the module's templates folder, and their heade
 the variables available in the header comment. Copy the required files to your theme's templates
 folders and modify them if you need a customised default group landing page template.
 
+The tabs use jQuery UI, initialised by `data_entry_helper::enable_tabs()`, independently of the
+site's Bootstrap version. Overrides of `group-landing-page-tabs.html.twig` must retain the
+`group-landing-page-tabs` wrapper ID, the `tab-header` list with links to the panel IDs, and
+the `indicia-lazy-load` panel classes. Do not add Bootstrap tab activation attributes or
+panel visibility classes, as jQuery UI manages tab activation and visibility.
+
 Theme suggestions are provided to allow you to create versions of the template file specific to
 certain group types, to container/contained groups, or specific to individual groups:
 
