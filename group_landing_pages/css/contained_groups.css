@@ -18,31 +18,31 @@
 .group-contained-cards ul li a:focus {
   text-decoration: none;
 }
-.group-contained-cards .panel {
+.group-contained-cards .group-card {
   height: 100%;
   margin-bottom: 0;
 }
-.group-contained-cards a:hover .panel,
-.group-contained-cards a:focus .panel {
+.group-contained-cards a:hover .group-card,
+.group-contained-cards a:focus .group-card {
   box-shadow: 0 0 21px 5px #aaaaaa;
 }
-.group-contained-cards .panel-heading {
+.group-contained-cards .group-card-heading {
   padding: 0;
 }
-.group-contained-cards .panel-heading img {
+.group-contained-cards .group-card-heading img {
   object-fit: cover;
   object-position: 50% 0;
   max-height: 200px;
   width: 100%;
   margin: 0;
 }
-.group-contained-cards .panel-heading i {
+.group-contained-cards .group-card-heading i {
   margin: 8px;
 }
-.group-contained-cards .panel-body h4 {
+.group-contained-cards .group-card-body h4 {
   margin-top: 0;
 }
-.group-contained-cards .panel-body p {
+.group-contained-cards .group-card-body p {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 6;

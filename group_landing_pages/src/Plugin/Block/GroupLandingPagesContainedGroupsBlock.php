@@ -19,6 +19,7 @@ class GroupLandingPagesContainedGroupsBlock extends IndiciaBlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    global $indicia_templates;
     $build = ['#cache' => ['max-age' => 0]];
     $config = $this->getConfiguration();
     if (empty($config['group_id'])) {
@@ -84,6 +85,11 @@ class GroupLandingPagesContainedGroupsBlock extends IndiciaBlockBase {
       '#heading' => $this->t('@label links', ['@label' => ucfirst($config['contained_group_label'])]),
       '#groups' => $cards,
       '#warehouse_url' => \Drupal::config('iform.settings')->get('base_url'),
+      '#card_classes' => [
+        'container' => $indicia_templates['cardClass'],
+        'heading' => $indicia_templates['cardHeadingClass'],
+        'body' => $indicia_templates['cardBodyClass'],
+      ],
     ];
     $build['#attached']['library'][] = 'group_landing_pages/contained-groups';
     return $build;

@@ -61,6 +61,7 @@ function group_landing_pages_theme($existing, $type, $theme, $path) {
         'heading' => '',
         'groups' => [],
         'warehouse_url' => '',
+        'card_classes' => [],
       ],
     ],
     'group_landing_page_progress' => [

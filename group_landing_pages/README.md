@@ -106,6 +106,13 @@ The Group Landing Pages module also provides the following blocks:
   * `group_id` - container group ID (required).
   * `contained_group_label` - label used in the section heading (required).
 
+The cards use the active Indicia `cardClass`, `cardHeadingClass`, and
+`cardBodyClass` templates, matching group discovery: panels with Bootstrap 3
+and cards with Bootstrap 5. The card theme hook exposes these as
+`card_classes.container`, `card_classes.heading`, and `card_classes.body`.
+The fixed `group-card`, `group-card-heading`, and `group-card-body` classes
+are added by the Twig template, not by the configurable class templates.
+
 Custom overview templates can embed the cards inside their container-group condition:
 
 ```twig
