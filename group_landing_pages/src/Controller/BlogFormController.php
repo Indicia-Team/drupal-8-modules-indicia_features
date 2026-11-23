@@ -43,10 +43,10 @@ class BlogFormController extends ControllerBase {
    *
    * @param \Drupal\Core\Entity\EntityFormBuilderInterface $entity_form_builder
    *   Form builder service.
-   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   * @param \Symfony\Component\HttpFoundation\RequestStack|null $request_stack
    *   The request stack service.
    */
-  public function __construct(EntityFormBuilderInterface $entity_form_builder, RequestStack $request_stack = NULL) {
+  public function __construct(EntityFormBuilderInterface $entity_form_builder, ?RequestStack $request_stack) {
     $this->entityFormBuilder = $entity_form_builder;
     $this->requestStack = $request_stack;
   }
